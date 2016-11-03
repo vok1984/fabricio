@@ -38,8 +38,8 @@ class Container(BaseService):
         image = image or self.image
         return super(Container, self).fork(
             name,
-            options=options,
             image=image,
+            options=options,
             **attrs
         )
 
