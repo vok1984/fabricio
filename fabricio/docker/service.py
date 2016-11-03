@@ -3,33 +3,41 @@ from .base import BaseService, Option, Attribute
 
 class Service(BaseService):
 
-    @property
+    @Attribute
     def image(self):
-        return self.container.image
+        return self.container and self.container.image
 
     @Attribute
     def cmd(self):
-        return self.container.cmd
+        return self.container and self.container.cmd
+
+    args = Attribute()
 
     replicas = Option(default=1)
 
     mount = Option()
 
+    restart_condition = Option()
+
+    @Option
+    def stop_timeout(self):
+        return self.container and self.container.stop_timeout
+
     @Option
     def env(self):
-        return self.container.env
+        return self.container and self.container.env
 
     @Option
     def network(self):
-        return self.container.network
+        return self.container and self.container.network
 
     @Option
     def ports(self):
-        return self.container.ports
+        return self.container and self.container.ports
 
     @Option
     def user(self):
-        return self.container.user
+        return self.container and self.container.user
 
     def __init__(self, name, container=None, options=None, **attrs):
         super(Service, self).__init__(name, options=options, **attrs)
