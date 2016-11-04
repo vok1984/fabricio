@@ -106,3 +106,21 @@ class BaseService(object):
 
     def __copy__(self):
         return self.fork()
+
+    def update(self, tag=None, registry=None, force=False):
+        raise NotImplementedError
+
+    def revert(self):
+        raise NotImplementedError
+
+    def migrate(self, tag=None, registry=None):
+        pass
+
+    def migrate_back(self):
+        pass
+
+    def backup(self):
+        pass
+
+    def restore(self, backup_name=None):
+        pass

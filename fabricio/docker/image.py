@@ -50,8 +50,8 @@ class Image(object):
                 tag=self.tag,
                 registry=self.registry,
             )
-        # this cause circular reference between container and image, but it's
-        # not a problem due to temporary nature of Fabric runtime
+        # this cause circular reference between container and image, but it
+        # isn't an issue due to a temporary nature of Fabric runtime
         image.container = container
         return image
 
@@ -60,7 +60,7 @@ class Image(object):
         container.__dict__[field_name] = (
             image[:]  # actually this means copy of image
             if isinstance(image, Image) else
-            self.__class__(name=image)
+            self.__class__(image)
         )
 
     def __getitem__(self, item):
