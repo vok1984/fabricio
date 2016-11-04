@@ -86,6 +86,13 @@ class Container(BaseService):
             options=self.options,
         )
 
+    def create(self, tag=None, registry=None):
+        self.image[registry:tag].create_container(
+            command=self.command,
+            name=self.name,
+            options=self.options,
+        )
+
     def execute(
         self,
         cmd=None,  # deprecated
@@ -135,7 +142,7 @@ class Container(BaseService):
         command = 'docker kill --signal {signal} {container}'
         fabricio.run(command.format(container=self, signal=signal))
 
-    def update(self, tag=None, registry=None, force=False):
+    def update(self, tag=None, registry=None, force=False, run=True):
         if not force:
             try:
                 current_image_id = self.image.id
@@ -144,7 +151,8 @@ class Container(BaseService):
             else:
                 new_image = self.image[registry:tag]
                 if current_image_id == new_image.id:
-                    self.start()  # force starting container
+                    if run:
+                        self.start()  # force starting container
                     return False
         new_container = self.fork(name=self.name)
         obsolete_container = self.get_backup_container()
@@ -159,7 +167,10 @@ class Container(BaseService):
             pass  # current container not found
         else:
             backup_container.stop()
-        new_container.run(tag=tag, registry=registry)
+        if run:
+            new_container.run(tag=tag, registry=registry)
+        else:
+            new_container.create(tag=tag, registry=registry)
         return True
 
     def revert(self):

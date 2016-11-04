@@ -143,14 +143,35 @@ class Image(object):
             return delete_callback
         return delete_callback(ignore_errors=ignore_errors)
 
+    def create_container(
+        self,
+        command,
+        name=None,
+        options=(),
+        quiet=True,
+    ):
+        run_command = 'docker create {options} {image} {command}'
+        return fabricio.run(
+            run_command.format(
+                image=self,
+                command=command or '',
+                options=self.make_container_options(
+                    temporary=False,
+                    name=name,
+                    options=options,
+                ),
+            ),
+            quiet=quiet,
+        )
+
     def run(
         self,
         cmd=None,  # deprecated
         command=None,
-        temporary=True,
-        quiet=True,
         name=None,
+        temporary=True,
         options=(),
+        quiet=True,
         **kwargs  # deprecated
     ):
         if kwargs:
