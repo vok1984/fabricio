@@ -281,7 +281,7 @@ class PullDockerTasks(DockerTasks):
             return False
         if self.registry.host in ['localhost', '127.0.0.1']:
             return True
-        cmd = (
+        command = (
             'getent -V > /dev/null '
             '&& getent hosts {host} '
             '| head -1 '
@@ -290,7 +290,7 @@ class PullDockerTasks(DockerTasks):
             host=self.registry.host,
         )
         try:
-            result = fabricio.run(cmd, use_cache=True)
+            result = fabricio.run(command, use_cache=True)
             return result in ['127.0.0.1', '::1']
         except RuntimeError:
             fab.abort(

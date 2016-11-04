@@ -145,12 +145,13 @@ class Image(object):
 
     def run(
         self,
-        cmd=None,
+        cmd=None,  # deprecated
+        command=None,
         temporary=True,
         quiet=True,
         name=None,
         options=(),
-        **kwargs
+        **kwargs  # deprecated
     ):
         if kwargs:
             warnings.warn(
@@ -159,11 +160,17 @@ class Image(object):
                 category=RuntimeWarning, stacklevel=2,
             )
             options = dict(options, **kwargs)
-        command = 'docker run {options} {image} {cmd}'
+        if cmd:
+            warnings.warn(
+                "'cmd' argument deprecated and will be removed in v0.4, "
+                "use 'command' instead",
+                category=RuntimeWarning, stacklevel=2,
+            )
+        run_command = 'docker run {options} {image} {command}'
         return fabricio.run(
-            command.format(
+            run_command.format(
                 image=self,
-                cmd=cmd or '',
+                command=command or cmd or '',
                 options=self.make_container_options(
                     temporary=temporary,
                     name=name,

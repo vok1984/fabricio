@@ -105,9 +105,9 @@ class PostgresqlBackupMixin(docker.Container):
     def backup(self):
         if self.db_backup_dir is None:
             fab.abort('db_backup_dir not set, can\'t continue with backup')
-        cmd = self.make_backup_command()
+        command = self.make_backup_command()
         self.image.run(
-            cmd=cmd,
+            command=command,
             quiet=False,
             options=self.safe_options,
         )
@@ -141,9 +141,9 @@ class PostgresqlBackupMixin(docker.Container):
         if backup_filename is None:
             raise ValueError('backup_filename not provided')
 
-        cmd = self.make_restore_command(backup_filename)
+        command = self.make_restore_command(backup_filename)
         self.image.run(
-            cmd=cmd,
+            command=command,
             quiet=False,
             options=self.safe_options,
         )
@@ -344,7 +344,7 @@ class StreamingReplicatedPostgresqlContainer(PostgresqlContainer):
         self.instances = multiprocessing.JoinableQueue()
 
     def copy_data_from_master(self, tag=None, registry=None):
-        pg_basebackup_cmd = (
+        pg_basebackup_command = (
             'pg_basebackup'
             ' --progress'
             ' --write-recovery-conf'
@@ -359,11 +359,11 @@ class StreamingReplicatedPostgresqlContainer(PostgresqlContainer):
                 port=self.pg_recovery_port,
             )
         )
-        cmd = "/bin/bash -c '{pg_basebackup_cmd}'".format(
-            pg_basebackup_cmd=pg_basebackup_cmd,
+        command = "/bin/bash -c '{pg_basebackup_command}'".format(
+            pg_basebackup_command=pg_basebackup_command,
         )
         self.image[registry:tag].run(
-            cmd=cmd,
+            command=command,
             options=self.options,
             quiet=False,
         )

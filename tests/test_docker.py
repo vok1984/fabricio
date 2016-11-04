@@ -194,7 +194,7 @@ class ContainerTestCase(unittest.TestCase):
     def test_attributes_inheritance(self):
 
         class Container(docker.Container):
-            cmd = 'cmd'  # overridden property (simple)
+            command = 'command'  # overridden property (simple)
 
             @property  # overridden property (dynamic)
             def stop_timeout(self):
@@ -218,9 +218,9 @@ class ContainerTestCase(unittest.TestCase):
 
         container = Container('name')
 
-        self.assertEqual(container.cmd, 'cmd')
-        container.cmd = 'command'
-        self.assertEqual(container.cmd, 'command')
+        self.assertEqual(container.command, 'command')
+        container.command = 'command2'
+        self.assertEqual(container.command, 'command2')
 
         self.assertEqual(container.stop_timeout, 1001)
 
@@ -308,13 +308,13 @@ class ContainerTestCase(unittest.TestCase):
 
     def test_execute(self):
         container = docker.Container(name='name')
-        expected_command = 'docker exec --tty --interactive name cmd'
+        expected_command = 'docker exec --tty --interactive name command'
         with mock.patch.object(
             fabricio,
             'run',
             return_value='result'
         ) as run:
-            result = container.execute('cmd')
+            result = container.execute('command')
             run.assert_called_once_with(
                 expected_command,
                 ignore_errors=False,
@@ -402,7 +402,7 @@ class ContainerTestCase(unittest.TestCase):
                     'name': 'name',
                     'detach': True,
                     'image': 'image:tag',
-                    'cmd': [],
+                    'command': [],
                 },
             ),
             complex=dict(
@@ -415,7 +415,7 @@ class ContainerTestCase(unittest.TestCase):
                 ),
                 class_kwargs=dict(
                     image=docker.Image('image:tag'),
-                    cmd='cmd',
+                    command='command',
                     user='user',
                     ports=['80:80', '443:443'],
                     env=['FOO=foo', 'BAR=bar'],
@@ -441,7 +441,7 @@ class ContainerTestCase(unittest.TestCase):
                     'detach': True,
                     'custom-option': 'foo',
                     'image': 'image:tag',
-                    'cmd': ['cmd'],
+                    'command': ['command'],
                 },
             ),
         )
@@ -469,7 +469,7 @@ class ContainerTestCase(unittest.TestCase):
                 fork_kwargs=dict(),
                 expected_properties=dict(
                     name='name',
-                    cmd=None,
+                    command=None,
                     options={
                         'net': None,
                         'link': None,
@@ -488,12 +488,12 @@ class ContainerTestCase(unittest.TestCase):
                     name='name',
                     options=dict(user='fabricio', foo='baz'),
                     image='image:tag',
-                    cmd='fab',
+                    command='fab',
                 ),
                 fork_kwargs=dict(),
                 expected_properties=dict(
                     name='name',
-                    cmd='fab',
+                    command='fab',
                     options={
                         'net': None,
                         'link': None,
@@ -514,7 +514,7 @@ class ContainerTestCase(unittest.TestCase):
                 fork_kwargs=dict(name='another_name'),
                 expected_properties=dict(
                     name='another_name',
-                    cmd=None,
+                    command=None,
                     options={
                         'net': None,
                         'link': None,
@@ -528,12 +528,12 @@ class ContainerTestCase(unittest.TestCase):
                     },
                 ),
             ),
-            override_cmd=dict(
+            override_command=dict(
                 init_kwargs=dict(name='name'),
-                fork_kwargs=dict(cmd='command'),
+                fork_kwargs=dict(command='command'),
                 expected_properties=dict(
                     name='name',
-                    cmd='command',
+                    command='command',
                     options={
                         'net': None,
                         'link': None,
@@ -552,7 +552,7 @@ class ContainerTestCase(unittest.TestCase):
                 fork_kwargs=dict(image='image'),
                 expected_properties=dict(
                     name='name',
-                    cmd=None,
+                    command=None,
                     options={
                         'net': None,
                         'link': None,
@@ -572,7 +572,7 @@ class ContainerTestCase(unittest.TestCase):
                 fork_kwargs=dict(image=docker.Image('image')),
                 expected_properties=dict(
                     name='name',
-                    cmd=None,
+                    command=None,
                     options={
                         'net': None,
                         'link': None,
@@ -592,7 +592,7 @@ class ContainerTestCase(unittest.TestCase):
                 fork_kwargs=dict(options=dict(user='user')),
                 expected_properties=dict(
                     name='name',
-                    cmd=None,
+                    command=None,
                     options={
                         'net': None,
                         'link': None,
@@ -611,7 +611,7 @@ class ContainerTestCase(unittest.TestCase):
                 fork_kwargs=dict(options=dict(foo='bar')),
                 expected_properties=dict(
                     name='name',
-                    cmd=None,
+                    command=None,
                     options={
                         'net': None,
                         'link': None,
@@ -631,12 +631,12 @@ class ContainerTestCase(unittest.TestCase):
                 fork_kwargs=dict(
                     options=dict(foo='bar', user='user'),
                     image='image',
-                    cmd='command',
+                    command='command',
                     name='another_name',
                 ),
                 expected_properties=dict(
                     name='another_name',
-                    cmd='command',
+                    command='command',
                     options={
                         'net': None,
                         'link': None,
@@ -652,17 +652,17 @@ class ContainerTestCase(unittest.TestCase):
                 ),
                 expected_image='image:latest',
             ),
-            predefined_override_cmd=dict(
+            predefined_override_command=dict(
                 init_kwargs=dict(
                     name='name',
                     options=dict(user='fabricio', foo='baz'),
                     image='image:tag',
-                    cmd='fab',
+                    command='fab',
                 ),
-                fork_kwargs=dict(cmd='command'),
+                fork_kwargs=dict(command='command'),
                 expected_properties=dict(
                     name='name',
-                    cmd='command',
+                    command='command',
                     options={
                         'net': None,
                         'link': None,
@@ -683,12 +683,12 @@ class ContainerTestCase(unittest.TestCase):
                     name='name',
                     options=dict(user='fabricio', foo='baz'),
                     image='image:tag',
-                    cmd='fab',
+                    command='fab',
                 ),
                 fork_kwargs=dict(image='image'),
                 expected_properties=dict(
                     name='name',
-                    cmd='fab',
+                    command='fab',
                     options={
                         'net': None,
                         'link': None,
@@ -709,12 +709,12 @@ class ContainerTestCase(unittest.TestCase):
                     name='name',
                     options=dict(user='fabricio', foo='baz'),
                     image='image:tag',
-                    cmd='fab',
+                    command='fab',
                 ),
                 fork_kwargs=dict(image=docker.Image('image')),
                 expected_properties=dict(
                     name='name',
-                    cmd='fab',
+                    command='fab',
                     options={
                         'net': None,
                         'link': None,
@@ -735,12 +735,12 @@ class ContainerTestCase(unittest.TestCase):
                     name='name',
                     options=dict(user='fabricio', foo='baz'),
                     image='image:tag',
-                    cmd='fab',
+                    command='fab',
                 ),
                 fork_kwargs=dict(options=dict(user='user')),
                 expected_properties=dict(
                     name='name',
-                    cmd='fab',
+                    command='fab',
                     options={
                         'net': None,
                         'link': None,
@@ -761,12 +761,12 @@ class ContainerTestCase(unittest.TestCase):
                     name='name',
                     options=dict(user='fabricio', foo='baz'),
                     image='image:tag',
-                    cmd='fab',
+                    command='fab',
                 ),
                 fork_kwargs=dict(options=dict(foo='bar')),
                 expected_properties=dict(
                     name='name',
-                    cmd='fab',
+                    command='fab',
                     options={
                         'net': None,
                         'link': None,
@@ -787,17 +787,17 @@ class ContainerTestCase(unittest.TestCase):
                     name='name',
                     options=dict(user='fabricio', foo='baz', hello=42),
                     image='image:tag',
-                    cmd='fab',
+                    command='fab',
                 ),
                 fork_kwargs=dict(
                     options=dict(foo='bar', user='user'),
                     image='image',
-                    cmd='command',
+                    command='command',
                     name='another_name',
                 ),
                 expected_properties=dict(
                     name='another_name',
-                    cmd='command',
+                    command='command',
                     options={
                         'net': None,
                         'link': None,
@@ -1317,7 +1317,7 @@ class ImageTestCase(unittest.TestCase):
                     'tty': True,
                     'interactive': True,
                     'image': 'image:latest',
-                    'cmd': [],
+                    'command': [],
                 },
             ),
             with_main_option=dict(
@@ -1329,7 +1329,7 @@ class ImageTestCase(unittest.TestCase):
                     'interactive': True,
                     'user': 'user',
                     'image': 'image:latest',
-                    'cmd': [],
+                    'command': [],
                 },
             ),
             with_additional_option=dict(
@@ -1341,7 +1341,7 @@ class ImageTestCase(unittest.TestCase):
                     'interactive': True,
                     'custom-option': 'bar',
                     'image': 'image:latest',
-                    'cmd': [],
+                    'command': [],
                 },
             ),
             with_main_option_deprecated=dict(
@@ -1353,7 +1353,7 @@ class ImageTestCase(unittest.TestCase):
                     'interactive': True,
                     'user': 'user',
                     'image': 'image:latest',
-                    'cmd': [],
+                    'command': [],
                 },
             ),
             with_additional_option_deprecated=dict(
@@ -1365,18 +1365,18 @@ class ImageTestCase(unittest.TestCase):
                     'interactive': True,
                     'custom-option': 'bar',
                     'image': 'image:latest',
-                    'cmd': [],
+                    'command': [],
                 },
             ),
-            with_cmd=dict(
-                kwargs=dict(cmd='cmd'),
+            with_command=dict(
+                kwargs=dict(command='command'),
                 expected_args={
                     'executable': ['docker', 'run'],
                     'rm': True,
                     'tty': True,
                     'interactive': True,
                     'image': 'image:latest',
-                    'cmd': ['cmd'],
+                    'command': ['command'],
                 },
             ),
             detached=dict(
@@ -1386,7 +1386,7 @@ class ImageTestCase(unittest.TestCase):
                     'executable': ['docker', 'run'],
                     'detach': True,
                     'image': 'image:latest',
-                    'cmd': [],
+                    'command': [],
                 },
             ),
             with_name=dict(
@@ -1399,7 +1399,7 @@ class ImageTestCase(unittest.TestCase):
                     'interactive': True,
                     'image': 'image:latest',
                     'name': 'name',
-                    'cmd': [],
+                    'command': [],
                 },
             ),
         )

@@ -1,4 +1,5 @@
 import json
+import warnings
 
 import fabricio
 
@@ -10,7 +11,22 @@ class Container(BaseService):
 
     image = Image()
 
-    cmd = Attribute()
+    @Attribute
+    def cmd(self):
+        warnings.warn(
+            "'cmd' is deprecated and will be removed in ver. 0.4, "
+            "use 'command' instead", DeprecationWarning,
+        )
+        return None
+
+    @Attribute
+    def command(self):
+        warnings.warn(
+            "'cmd' is deprecated and will be removed in ver. 0.4, "
+            "use 'command' instead", RuntimeWarning,
+        )
+        return self.cmd
+
     stop_timeout = Attribute(default=10)
 
     user = Option()
@@ -64,16 +80,31 @@ class Container(BaseService):
 
     def run(self, tag=None, registry=None):
         self.image[registry:tag].run(
-            cmd=self.cmd,
+            command=self.command,
             temporary=False,
             name=self.name,
             options=self.options,
         )
 
-    def execute(self, cmd, ignore_errors=False, quiet=True, use_cache=False):
-        command = 'docker exec --tty --interactive {container} {cmd}'
+    def execute(
+        self,
+        cmd=None,  # deprecated
+        command=None,
+        ignore_errors=False,
+        quiet=True,
+        use_cache=False,
+    ):
+        if cmd:
+            warnings.warn(
+                "'cmd' argument deprecated and will be removed in v0.4, "
+                "use 'command' instead",
+                category=RuntimeWarning, stacklevel=2,
+            )
+        if not (command or cmd):
+            raise ValueError('Must provide command to execute')
+        exec_command = 'docker exec --tty --interactive {container} {command}'
         return fabricio.run(
-            command.format(container=self, cmd=cmd),
+            exec_command.format(container=self, command=command or cmd),
             ignore_errors=ignore_errors,
             quiet=quiet,
             use_cache=use_cache,

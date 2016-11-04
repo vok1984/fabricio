@@ -707,7 +707,7 @@ class StreamingReplicatedPostgresqlContainerTestCase(unittest.TestCase):
                     'tty': True,
                     'interactive': True,
                     'image': 'image:latest',
-                    'cmd': ['/bin/bash', '-c', "'pg_basebackup", '--progress', '--write-recovery-conf', '--xlog-method=stream', '--pgdata=$PGDATA', '--host=master', '--username=postgres', "--port=5432'"],
+                    'command': ['/bin/bash', '-c', "'pg_basebackup", '--progress', '--write-recovery-conf', '--xlog-method=stream', '--pgdata=$PGDATA', '--host=master', '--username=postgres', "--port=5432'"],
                 },
             ),
             master_promotion_from_scratch=dict(
@@ -782,7 +782,7 @@ class StreamingReplicatedPostgresqlContainerTestCase(unittest.TestCase):
                     'tty': True,
                     'interactive': True,
                     'image': 'image:latest',
-                    'cmd': ['/bin/bash', '-c', "'pg_basebackup", '--progress', '--write-recovery-conf', '--xlog-method=stream', '--pgdata=$PGDATA', '--host=promoted_master', '--username=postgres', "--port=5432'"],
+                    'command': ['/bin/bash', '-c', "'pg_basebackup", '--progress', '--write-recovery-conf', '--xlog-method=stream', '--pgdata=$PGDATA', '--host=promoted_master', '--username=postgres', "--port=5432'"],
                 },
             )
         run.side_effect = test_command

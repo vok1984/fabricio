@@ -32,7 +32,7 @@ docker_run_args_parser.add_argument('--rm', action='store_true')
 docker_run_args_parser.add_argument('--name')
 docker_run_args_parser.add_argument('--custom-option', dest='custom-option')
 docker_run_args_parser.add_argument('image')
-docker_run_args_parser.add_argument('cmd', nargs=argparse.REMAINDER)
+docker_run_args_parser.add_argument('command', nargs=argparse.REMAINDER)
 
 args_parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
 args_parser.add_argument('args', nargs=argparse.REMAINDER)

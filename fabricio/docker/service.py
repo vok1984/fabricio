@@ -8,8 +8,8 @@ class Service(BaseService):
         return self.container and self.container.image
 
     @Attribute
-    def cmd(self):
-        return self.container and self.container.cmd
+    def command(self):
+        return self.container and self.container.command
 
     args = Attribute()
 
