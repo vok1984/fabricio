@@ -241,7 +241,7 @@ class PostgresqlContainer(docker.Container):
             # therefore if you use image other then official, you may need
             # implement your own `create_db()`
             'postgres --version',
-            options=self.options,
+            options=self.safe_options,
             quiet=False,
         )
 
