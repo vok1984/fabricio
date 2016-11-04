@@ -1,7 +1,5 @@
 import json
 
-from frozendict import frozendict
-
 import fabricio
 
 from .base import BaseService, Option, Attribute
@@ -16,14 +14,14 @@ class Container(BaseService):
     stop_timeout = Attribute(default=10)
 
     user = Option()
-    ports = Option()
+    ports = Option(name='publish')
     env = Option()
-    volumes = Option()
-    links = Option()
-    hosts = Option()
-    network = Option()
-    restart_policy = Option()
-    stop_signal = Option()
+    volumes = Option(name='volume')
+    links = Option(name='link')
+    hosts = Option(name='add-host')
+    network = Option(name='net')
+    restart_policy = Option(name='restart')
+    stop_signal = Option(name='stop-signal')
 
     def __init__(self, name, image=None, options=None, **attrs):
         super(Container, self).__init__(name, options=options, **attrs)
@@ -32,7 +30,7 @@ class Container(BaseService):
 
     @property
     def safe_options(self):
-        return frozendict(self.options, ports=None)
+        return self._get_options(ports=None)
 
     def fork(self, name=None, image=None, options=None, **attrs):
         image = image or self.image

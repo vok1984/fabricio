@@ -5,7 +5,10 @@ from fabricio.utils import default_property
 
 
 class Option(default_property):
-    pass
+
+    def __init__(self, func=None, default=None, name=None):
+        super(Option, self).__init__(func=func, default=default)
+        self.name = name
 
 
 class Attribute(default_property):
@@ -19,16 +22,16 @@ class BaseService(object):
 
         options = options or {}
         self.overridden_options = set()
-        is_main_option = self.main_options.__contains__
-        self.options = container_options = {}
+        is_main_option = self._main_options.__contains__
+        self._additional_options = additional_options = {}
         for option, value in options.items():
             if is_main_option(option):
                 setattr(self, option, value)
             else:
-                container_options[option] = value
+                additional_options[option] = value
 
         self.overridden_attributes = set()
-        is_attribute = self.attributes.__contains__
+        is_attribute = self._attributes.__contains__
         if attrs:
             for attr, value in attrs.items():
                 if not is_attribute(attr):
@@ -38,41 +41,40 @@ class BaseService(object):
                 setattr(self, attr, value)
 
     def __setattr__(self, attr, value):
-        if attr in self.main_options:
+        if attr in self._main_options:
             self.overridden_options.add(attr)
-        elif attr in self.attributes:
+        elif attr in self._attributes:
             self.overridden_attributes.add(attr)
         super(BaseService, self).__setattr__(attr, value)
 
-    def _get_options(self):
-        default_options_values = dict(
-            (option, getattr(self, option))
-            for option in self.main_options
-        )
-        return frozendict(self._options, **default_options_values)
-
-    def _set_options(self, options):
-        self._options = options
-
-    options = property(_get_options, _set_options)
-
     @cached_property
-    def main_options(self):
-        return set(
-            attr
+    def _main_options(self):
+        return dict(
+            (attr, value.name or attr)
             for cls in type(self).__mro__
             for attr, value in vars(cls).items()
             if isinstance(value, Option)
         )
 
     @cached_property
-    def attributes(self):
+    def _attributes(self):
         return set(
             attr
             for cls in type(self).__mro__
             for attr, value in vars(cls).items()
             if isinstance(value, Attribute)
         )
+
+    def _get_options(self, **override):
+        return frozendict(
+            (
+                (option, override.get(attr, getattr(self, attr)))
+                for attr, option in self._main_options.items()
+            ),
+            **self._additional_options
+        )
+
+    options = property(_get_options)
 
     def fork(self, name=None, options=None, **attrs):
         if name is None:
@@ -83,7 +85,7 @@ class BaseService(object):
                 (option, getattr(self, option))
                 for option in self.overridden_options
             ),
-            **self._options
+            **self._additional_options
         )
         if options:
             fork_options.update(options)

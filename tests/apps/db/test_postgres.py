@@ -13,7 +13,7 @@ import fabricio
 
 from fabricio.apps.db import postgres
 from fabricio import docker
-from tests import SucceededResult, FailedResult
+from tests import SucceededResult, FailedResult, docker_run_args_parser
 
 
 class TestContainer(postgres.PostgresqlContainer):
@@ -43,8 +43,9 @@ class PostgresqlContainerTestCase(unittest.TestCase):
 
     @mock.patch.object(fab, 'get')
     @mock.patch.object(fab, 'put')
+    @mock.patch.object(postgres.PostgresqlContainer, 'create_db')
     @mock.patch.object(files, 'exists', return_value=True)
-    def test_update(self, exists, *args):
+    def test_update(self, exists, create_db, *args):
         cases = dict(
             updated_without_config_change=dict(
                 db_exists=True,
@@ -326,7 +327,6 @@ class PostgresqlContainerTestCase(unittest.TestCase):
                     'old_pg_hba.conf',
                 ],
                 expected_commands=[
-                    mock.call('docker run --volume /data:/data --stop-signal INT --rm --tty --interactive image:tag postgres --version', quiet=False),
                     mock.call('mv /data/postgresql.conf /data/postgresql.conf.backup', ignore_errors=True, sudo=True),
                     mock.call('mv /data/pg_hba.conf /data/pg_hba.conf.backup', ignore_errors=True, sudo=True),
                     mock.call('docker restart --time 30 name'),
@@ -336,13 +336,13 @@ class PostgresqlContainerTestCase(unittest.TestCase):
                     SucceededResult(),
                     SucceededResult(),
                     SucceededResult(),
-                    SucceededResult(),
                     RuntimeError,
                 ),
                 update_kwargs=dict(),
                 parent_update_returned=False,
                 expected_update_kwargs=dict(force=False, tag=None, registry=None),
                 expected_result=True,
+                expected_db_creation=True,
             ),
         )
         for case, data in cases.items():
@@ -379,6 +379,8 @@ class PostgresqlContainerTestCase(unittest.TestCase):
                                 self.assertListEqual(run.mock_calls, data['expected_commands'])
                                 self.assertEqual(result, data['expected_result'])
                                 update.assert_called_once_with(**data['expected_update_kwargs'])
+                                if data.get('expected_db_creation', False):
+                                    create_db.assert_called_once()
 
     def test_revert(self):
         cases = dict(
@@ -697,9 +699,16 @@ class StreamingReplicatedPostgresqlContainerTestCase(unittest.TestCase):
                 expected_result=True,
                 set_master='master',
                 expected_recovery_conf="primary_conninfo = 'host=master port=5432 user=postgres'\n",
-                expected_commands=[
-                    mock.call("docker run --volume /data:/data --stop-signal INT --rm --tty --interactive image:latest /bin/bash -c 'pg_basebackup --progress --write-recovery-conf --xlog-method=stream --pgdata=$PGDATA --host=master --username=postgres --port=5432'", quiet=False),
-                ],
+                expected_args={
+                    'executable': ['docker', 'run'],
+                    'volume': ['/data:/data'],
+                    'stop-signal': 'INT',
+                    'rm': True,
+                    'tty': True,
+                    'interactive': True,
+                    'image': 'image:latest',
+                    'cmd': ['/bin/bash', '-c', "'pg_basebackup", '--progress', '--write-recovery-conf', '--xlog-method=stream', '--pgdata=$PGDATA', '--host=master', '--username=postgres', "--port=5432'"],
+                },
             ),
             master_promotion_from_scratch=dict(
                 db_exists=False,
@@ -721,9 +730,14 @@ class StreamingReplicatedPostgresqlContainerTestCase(unittest.TestCase):
                 init_kwargs=dict(pg_recovery_master_promotion_enabled=True),
             ),
         )
+
+        def test_command(command, *args, **kwargs):
+            options = docker_run_args_parser.parse_args(command.split())
+            self.assertDictEqual(vars(options), data['expected_args'])
         for case, data in cases.items():
             with self.subTest(case=case):
                 run.reset_mock()
+                run.side_effect = data.get('expected_args') and test_command
                 postgres.open = mock.MagicMock(
                     return_value=six.BytesIO(data.get('old_recovery_conf', '')),
                 )
@@ -742,7 +756,9 @@ class StreamingReplicatedPostgresqlContainerTestCase(unittest.TestCase):
                     result = container.update_recovery_config()
                     self.assertEqual(result, data['expected_result'])
                     self.assertEqual(container.multiprocessing_data.master, data['expected_master_host'])
-                    self.assertListEqual(run.mock_calls, data['expected_commands'])
+                    expected_commands = data.get('expected_commands')
+                    if expected_commands:
+                        self.assertListEqual(run.mock_calls, expected_commands)
                     if 'expected_recovery_conf' in data:
                         update_config.assert_called_once_with(
                             content=data['expected_recovery_conf'],
@@ -754,6 +770,22 @@ class StreamingReplicatedPostgresqlContainerTestCase(unittest.TestCase):
     @mock.patch.object(postgres.StreamingReplicatedPostgresqlContainer, 'get_recovery_config')
     @mock.patch.object(fabricio, 'run')
     def test_update_recovery_config_does_not_promote_new_master_without_db_if_slave_with_db_exists(self, run, *args):
+        def test_command(command, *args, **kwargs):
+            options = docker_run_args_parser.parse_args(command.split())
+            self.assertDictEqual(
+                vars(options),
+                {
+                    'executable': ['docker', 'run'],
+                    'volume': ['/data:/data'],
+                    'stop-signal': 'INT',
+                    'rm': True,
+                    'tty': True,
+                    'interactive': True,
+                    'image': 'image:latest',
+                    'cmd': ['/bin/bash', '-c', "'pg_basebackup", '--progress', '--write-recovery-conf', '--xlog-method=stream', '--pgdata=$PGDATA', '--host=promoted_master', '--username=postgres', "--port=5432'"],
+                },
+            )
+        run.side_effect = test_command
         container = postgres.StreamingReplicatedPostgresqlContainer(
             name='name', image='image', pg_data='/data',
             options=dict(volumes='/data:/data'),
@@ -761,12 +793,6 @@ class StreamingReplicatedPostgresqlContainerTestCase(unittest.TestCase):
         container.multiprocessing_data.db_exists = True
         container.multiprocessing_data.master = 'promoted_master'
         container.update_recovery_config()
-        self.assertListEqual(
-            run.mock_calls,
-            [
-                mock.call("docker run --volume /data:/data --stop-signal INT --rm --tty --interactive image:latest /bin/bash -c 'pg_basebackup --progress --write-recovery-conf --xlog-method=stream --pgdata=$PGDATA --host=promoted_master --username=postgres --port=5432'", quiet=False),
-            ],
-        )
 
     @mock.patch.object(postgres.PostgresqlContainer, 'db_exists', return_value=True)
     @mock.patch.object(files, 'exists', return_value=True)

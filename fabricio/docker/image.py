@@ -12,18 +12,6 @@ from fabricio.utils import Options
 
 class Image(object):
 
-    container_options_mapping = (
-        ('user', 'user'),
-        ('publish', 'ports'),
-        ('env', 'env'),
-        ('volume', 'volumes'),
-        ('link', 'links'),
-        ('add-host', 'hosts'),
-        ('net', 'network'),
-        ('restart', 'restart_policy'),
-        ('stop-signal', 'stop_signal'),
-    )
-
     def __init__(self, name=None, tag=None, registry=None):
         if name:
             _registry, _name, _tag = self.parse_image_name(name)
@@ -111,21 +99,14 @@ class Image(object):
 
     @classmethod
     def make_container_options(cls, temporary=None, name=None, options=()):
-        options = dict(options)
-        container_options = Options()
-        for remap, option in cls.container_options_mapping:
-            container_options[remap] = options.pop(option, None)
-        container_options.update(
-            (
-                ('name', name),
-                ('rm', temporary),
-                ('tty', temporary),
-                ('interactive', temporary),
-                ('detach', temporary is not None and not temporary),
-            ),
-            **options
+        return Options(
+            options,
+            name=name,
+            rm=temporary,
+            tty=temporary,
+            interactive=temporary,
+            detach=temporary is not None and not temporary,
         )
-        return container_options
 
     @property
     def info(self):

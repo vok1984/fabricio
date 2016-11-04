@@ -238,7 +238,7 @@ class PostgresqlContainer(docker.Container):
         self.image[registry:tag].run(
             # official PostgreSQL image executes 'postgres initdb' before
             # any 'postgres' command (see /docker-entrypoint.sh),
-            # therefore if you use image other then official, you should
+            # therefore if you use image other then official, you may need
             # implement your own `create_db()`
             'postgres --version',
             options=self.options,
