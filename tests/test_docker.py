@@ -98,7 +98,7 @@ class ContainerTestCase(unittest.TestCase):
 
     def test_options_inheritance(self):
 
-        class Container(docker.Container):
+        class Parent(docker.Container):
             user = 'user'  # overridden property (simple)
 
             @property  # overridden property (dynamic)
@@ -111,9 +111,37 @@ class ContainerTestCase(unittest.TestCase):
             def foo(self):
                 return 'bar'
 
+            @Option()  # new dynamic property
+            def foo2(self):
+                return 'bar2'
+
+            @Option(default='not_used')  # new dynamic property
+            def foo3(self):
+                return 'bar3'
+
             null = Option()  # new empty property
 
-        container = Container('name')
+            @Option(name='real-name')
+            def alias(self):
+                return 'value'
+
+            @Option(name='real-name2')
+            def overridden_alias(self):
+                return 'value'
+
+            @Option(name='real-name3')
+            def overridden_alias2(self):
+                return 'value'
+
+        class Child(Parent):
+
+            overridden_alias = 'overridden_value'
+
+            @Option(name='overridden-name')
+            def overridden_alias2(self):
+                return 'overridden_value'
+
+        container = Child('name')
 
         self.assertIn('user', container.options)
         self.assertEqual(container.options['user'], 'user')
@@ -132,6 +160,31 @@ class ContainerTestCase(unittest.TestCase):
         self.assertEqual(container.options['foo'], 'bar')
         container.foo = 'baz'
         self.assertEqual(container.options['foo'], 'baz')
+
+        self.assertIn('foo2', container.options)
+        self.assertEqual(container.options['foo2'], 'bar2')
+        container.foo2 = 'baz2'
+        self.assertEqual(container.options['foo2'], 'baz2')
+
+        self.assertIn('foo3', container.options)
+        self.assertEqual(container.options['foo3'], 'bar3')
+        container.foo3 = 'baz3'
+        self.assertEqual(container.options['foo3'], 'baz3')
+
+        self.assertIn('real-name', container.options)
+        self.assertEqual(container.options['real-name'], 'value')
+        container.alias = 'another_value'
+        self.assertEqual(container.options['real-name'], 'another_value')
+
+        self.assertIn('real-name2', container.options)
+        self.assertEqual(container.options['real-name2'], 'overridden_value')
+        container.overridden_alias = 'another_value'
+        self.assertEqual(container.options['real-name2'], 'another_value')
+
+        self.assertIn('overridden-name', container.options)
+        self.assertEqual(container.options['overridden-name'], 'overridden_value')
+        container.overridden_alias2 = 'another_value'
+        self.assertEqual(container.options['overridden-name'], 'another_value')
 
         self.assertIn('null', container.options)
         self.assertIsNone(container.options['null'])
@@ -153,6 +206,14 @@ class ContainerTestCase(unittest.TestCase):
             def foo(self):
                 return 'bar'
 
+            @Attribute()  # new dynamic property
+            def foo2(self):
+                return 'bar2'
+
+            @Attribute(default='not_used')  # new dynamic property
+            def foo3(self):
+                return 'bar3'
+
             null = Attribute()  # new empty property
 
         container = Container('name')
@@ -170,6 +231,14 @@ class ContainerTestCase(unittest.TestCase):
         self.assertEqual(container.foo, 'bar')
         container.foo = 'baz'
         self.assertEqual(container.foo, 'baz')
+
+        self.assertEqual(container.foo2, 'bar2')
+        container.foo2 = 'baz2'
+        self.assertEqual(container.foo2, 'baz2')
+
+        self.assertEqual(container.foo3, 'bar3')
+        container.foo3 = 'baz3'
+        self.assertEqual(container.foo3, 'baz3')
 
         self.assertIsNone(container.null)
         container.null = 'value'

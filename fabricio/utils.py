@@ -1,5 +1,7 @@
 import contextlib
 
+from copy import copy
+
 try:
     from collections import OrderedDict
 except ImportError:
@@ -32,6 +34,11 @@ class default_property(object):
         if self.func is None:
             return self.default
         return self.func(instance)
+
+    def __call__(self, func):
+        clone = copy(self)
+        clone.func = func
+        return clone
 
 
 class Options(OrderedDict):

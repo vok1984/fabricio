@@ -51,7 +51,7 @@ class BaseService(object):
     def _main_options(self):
         return dict(
             (attr, value.name or attr)
-            for cls in type(self).__mro__
+            for cls in type(self).__mro__[::-1]
             for attr, value in vars(cls).items()
             if isinstance(value, Option)
         )
