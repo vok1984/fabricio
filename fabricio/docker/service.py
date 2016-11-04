@@ -67,6 +67,7 @@ class Service(BaseService):
         )
 
     def update(self, tag=None, registry=None, force=False):
+        # TODO check if this host is manager
         sentinel_updated = self.sentinel.update(
             tag=tag,
             registry=registry,
@@ -75,6 +76,7 @@ class Service(BaseService):
         )
         if not sentinel_updated:
             return False
+        # TODO check if this host is a leader
         # TODO finish implementation
 
     def revert(self):
