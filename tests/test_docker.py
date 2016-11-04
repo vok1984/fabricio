@@ -408,7 +408,10 @@ class ContainerTestCase(unittest.TestCase):
             complex=dict(
                 init_kwargs=dict(
                     name='name',
-                    options=dict(custom_option='foo', restart_policy='override'),
+                    options={
+                        'custom-option': 'foo',
+                        'restart_policy': 'override',
+                    },
                 ),
                 class_kwargs=dict(
                     image=docker.Image('image:tag'),

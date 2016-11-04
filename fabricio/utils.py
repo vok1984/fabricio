@@ -45,7 +45,7 @@ class Options(OrderedDict):
 
     @staticmethod
     def make_option(option, value=None):
-        option = '--' + option.replace('_', '-')
+        option = '--' + option
         if value is not None:
             # TODO escape value
             option += ' ' + value
