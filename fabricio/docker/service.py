@@ -17,9 +17,9 @@ class Service(BaseService):
 
     mount = Option()
 
-    restart_condition = Option()
+    restart_condition = Option(name='restart-condition')
 
-    @Option
+    @Option(name='stop-grace-period')
     def stop_timeout(self):
         return self.container and self.container.stop_timeout
 
@@ -31,7 +31,7 @@ class Service(BaseService):
     def network(self):
         return self.container and self.container.network
 
-    @Option
+    @Option(name='publish')
     def ports(self):
         return self.container and self.container.ports
 
