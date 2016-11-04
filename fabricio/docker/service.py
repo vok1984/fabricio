@@ -1,15 +1,18 @@
 from .base import BaseService, Option, Attribute
+from .container import Container
 
 
 class Service(BaseService):
 
+    sentinel = None
+
     @Attribute
     def image(self):
-        return self.container and self.container.image
+        return self.sentinel and self.sentinel.image
 
     @Attribute
     def command(self):
-        return self.container and self.container.command
+        return self.sentinel and self.sentinel.command
 
     args = Attribute()
 
@@ -17,37 +20,43 @@ class Service(BaseService):
 
     mount = Option()
 
+    network = Option()
+
     restart_condition = Option(name='restart-condition')
 
     @Option(name='stop-grace-period')
     def stop_timeout(self):
-        return self.container and self.container.stop_timeout
+        return self.sentinel and self.sentinel.stop_timeout
 
     @Option
     def env(self):
-        return self.container and self.container.env
-
-    @Option
-    def network(self):
-        return self.container and self.container.network
+        return self.sentinel and self.sentinel.env
 
     @Option(name='publish')
     def ports(self):
-        return self.container and self.container.ports
+        return self.sentinel and self.sentinel.ports
 
     @Option
     def user(self):
-        return self.container and self.container.user
+        return self.sentinel and self.sentinel.user
 
-    def __init__(self, name, container=None, options=None, **attrs):
+    def __init__(self, name, sentinel=None, options=None, **attrs):
         super(Service, self).__init__(name, options=options, **attrs)
-        self.container = container
+        self.sentinel = sentinel or Container(
+            name=name,
+            image=self.image,
+            stop_timeout=self.stop_timeout,
+            options=dict(
+                env=self.env,
+                user=self.user,
+            ),
+        )
 
-    def fork(self, name=None, container=None, options=None, **attrs):
-        container = container or self.container
+    def fork(self, name=None, sentinel=None, options=None, **attrs):
+        sentinel = sentinel or self.sentinel
         return super(Service, self).fork(
             name,
-            container=container,
+            sentinel=sentinel,
             options=options,
             **attrs
         )
