@@ -1,4 +1,5 @@
 import dummy_threading
+import sys
 
 from fabric import api as fab, colors
 
@@ -99,11 +100,12 @@ class Service(BaseService):
                 # because they have to keep up to date their sentinel containers
                 raise
             fabricio.log(
-                "{host} could not pull image: {error}".format(
+                "WARNING: {host} could not pull image: {error}".format(
                     host=fab.env.host,
                     error=error,
                 ),
                 color=colors.red,
+                output=sys.stderr,
             )
 
     def migrate(self, tag=None, registry=None):
