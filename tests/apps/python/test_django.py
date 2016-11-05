@@ -87,7 +87,7 @@ class DjangoContainerTestCase(unittest.TestCase):
                             **data['container_class_vars']
                         ),
                     )
-                    container = TestContainer('test')
+                    container = TestContainer(name='test')
                     with fab.settings(fab.hide('everything')):
                         container.migrate(**data['kwargs'])
 

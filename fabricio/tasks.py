@@ -244,7 +244,7 @@ class DockerTasks(Tasks):
             force=strtobool(force),
         )
         if not updated:
-            fabricio.log('No changes detected, update skipped.')
+            fabricio.log('Host does not require update, update skipped.')
 
     @fab.task(default=True, task_class=IgnoreHostsTask)
     def deploy(self, tag=None, force=False, migrate=True, backup=False):

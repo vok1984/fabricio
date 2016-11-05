@@ -183,7 +183,7 @@ class DockerTasksTestCase(unittest.TestCase):
 
     @mock.patch.multiple(TestContainer, revert=mock.DEFAULT, migrate_back=mock.DEFAULT)
     def test_rollback(self, revert, migrate_back):
-        tasks_list = tasks.DockerTasks(container=TestContainer('name'), hosts=['host'])
+        tasks_list = tasks.DockerTasks(container=TestContainer(), hosts=['host'])
         rollback = mock.Mock()
         rollback.attach_mock(migrate_back, 'migrate_back')
         rollback.attach_mock(revert, 'revert')
@@ -290,7 +290,7 @@ class DockerTasksTestCase(unittest.TestCase):
         for case, data in cases.items():
             with self.subTest(case=case):
                 tasks_list = tasks.DockerTasks(
-                    container=TestContainer('name'),
+                    container=TestContainer(name='name'),
                     hosts=['host'],
                     **data.get('init_kwargs', {})
                 )
@@ -324,7 +324,7 @@ class DockerTasksTestCase(unittest.TestCase):
                 if data['infrastructure']:
                     fab.execute(data['infrastructure'].confirm)
                 backup.reset_mock()
-                container = docker.Container('name')
+                container = docker.Container()
                 commands = tasks.DockerTasks(container=container, hosts=['host'])
                 fab.execute(commands.backup)
                 backup.assert_called_once()
@@ -357,7 +357,7 @@ class DockerTasksTestCase(unittest.TestCase):
                 if data['infrastructure']:
                     fab.execute(data['infrastructure'].confirm)
                 restore.reset_mock()
-                container = docker.Container('name')
+                container = docker.Container()
                 commands = tasks.DockerTasks(container=container, hosts=['host'])
                 fab.execute(commands.restore)
                 restore.assert_called_once()
@@ -542,7 +542,11 @@ class PullDockerTasksTestCase(unittest.TestCase):
         for case, data in cases.items():
             with self.subTest(case=case):
                 run.return_value = data.get('registry_ip')
-                tasks_list = tasks.PullDockerTasks(container=TestContainer('name'), hosts=['host'], **data.get('init_kwargs', {}))
+                tasks_list = tasks.PullDockerTasks(
+                    container=TestContainer(name='name'),
+                    hosts=['host'],
+                    **data.get('init_kwargs', {})
+                )
                 tasks_list.deploy(**data['deploy_kwargs'])
                 self.assertListEqual(data['expected_calls'], deploy.mock_calls)
                 deploy.reset_mock()
@@ -754,7 +758,11 @@ class BuildDockerTasksTestCase(unittest.TestCase):
         for case, data in cases.items():
             with self.subTest(case=case):
                 run.return_value = data.get('registry_ip')
-                tasks_list = tasks.BuildDockerTasks(container=TestContainer('name'), hosts=['host'], **data.get('init_kwargs', {}))
+                tasks_list = tasks.BuildDockerTasks(
+                    container=TestContainer(name='name'),
+                    hosts=['host'],
+                    **data.get('init_kwargs', {})
+                )
                 tasks_list.deploy(**data['deploy_kwargs'])
                 self.assertListEqual(data['expected_calls'], deploy.mock_calls)
                 deploy.reset_mock()

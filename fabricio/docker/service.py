@@ -5,11 +5,8 @@ from fabric import api as fab, colors
 
 import fabricio
 
-from fabricio.utils import default_property
-
 from .base import BaseService, Option, Attribute
 from .container import Container
-from .image import Image
 
 
 class Service(BaseService):
@@ -18,13 +15,13 @@ class Service(BaseService):
 
     lock = dummy_threading.RLock()  # allow all tasks to be executed in parallel
 
-    @default_property
+    @property
     def image(self):
-        return self.sentinel and self.sentinel.image
+        return self.sentinel.image
 
     @Attribute
     def command(self):
-        return self.sentinel and self.sentinel.command
+        return self.sentinel.command
 
     args = Attribute()
 
@@ -46,37 +43,45 @@ class Service(BaseService):
 
     @Option(name='publish')
     def ports(self):
-        return self.sentinel and self.sentinel.ports
+        return self.sentinel.ports
 
     @Option
     def user(self):
         return self.sentinel and self.sentinel.user
 
-    def __init__(self, name, image=None, sentinel=None, options=None, **attrs):
-        super(Service, self).__init__(name, options=options, **attrs)
-        if image:
-            self.image = image if isinstance(image, Image) else Image(image)
-        self.sentinel = sentinel or Container(
-            name=name,
-            image=self.image,
-            stop_timeout=self.stop_timeout,
-            options=dict(
-                env=self.env,
-                user=self.user,
-            ),
-        )
+    def __init__(self, image=None, sentinel=None, options=None, **attrs):
+        super(Service, self).__init__(options=options, **attrs)
+        if sentinel:
+            sentinel_name = sentinel.name or self.name
+            sentinel = sentinel.fork(name=sentinel_name, image=image)
+        else:
+            sentinel = Container(
+                name=self.name,
+                image=image,
+                stop_timeout=self.stop_timeout,
+                options=dict(
+                    env=self.env,
+                    user=self.user,
+                ),
+            )
+        self.sentinel = sentinel
 
-    def fork(self, name=None, sentinel=None, options=None, **attrs):
+    def fork(self, image=None, sentinel=None, options=None, **attrs):
+        image = image or self.image
         sentinel = sentinel or self.sentinel
         return super(Service, self).fork(
-            name,
+            image=image,
             sentinel=sentinel,
             options=options,
             **attrs
         )
 
+    def _update(self):
+        pass  # TODO
+
     def update(self, tag=None, registry=None, force=False):
-        # TODO check if this host is manager
+        if not self.is_manager():
+            return False
         sentinel_updated = self.sentinel.update(
             tag=tag,
             registry=registry,
@@ -85,8 +90,9 @@ class Service(BaseService):
         )
         if not sentinel_updated:
             return False
-        # TODO check if this host is a leader
-        # TODO finish implementation
+        if self.is_leader():
+            self._update()
+        return True
 
     def revert(self):
         pass  # TODO
@@ -130,6 +136,7 @@ class Service(BaseService):
         return fabricio.run(command, ignore_errors=True, use_cache=True)
 
     def is_manager(self):
+        # 'docker node inspect self' command works only on manager nodes
         return self._leader_status.succeeded
 
     def is_leader(self):

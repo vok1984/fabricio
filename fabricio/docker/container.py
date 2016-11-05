@@ -39,8 +39,16 @@ class Container(BaseService):
     restart_policy = Option(name='restart')
     stop_signal = Option(name='stop-signal')
 
-    def __init__(self, name, image=None, options=None, **attrs):
-        super(Container, self).__init__(name, options=options, **attrs)
+    def __init__(self, _name=None, image=None, options=None, **attrs):
+        if _name:
+            warnings.warn(
+                'Passing container name using positional argument is '
+                'deprecated, this behaviour will be removed in v0.4, '
+                'use `name` keyword instead',
+                category=RuntimeWarning, stacklevel=2,
+            )
+            attrs.update(name=_name)
+        super(Container, self).__init__(options=options, **attrs)
         if image is not None:
             self.image = image
 
@@ -48,10 +56,17 @@ class Container(BaseService):
     def safe_options(self):
         return self._get_options(ports=None)
 
-    def fork(self, name=None, image=None, options=None, **attrs):
+    def fork(self, _name=None, image=None, options=None, **attrs):
+        if _name:
+            warnings.warn(
+                'Passing container name using positional argument is '
+                'deprecated, this behaviour will be removed in v0.4, '
+                'use `name` keyword instead',
+                category=RuntimeWarning, stacklevel=2,
+            )
+            attrs.update(name=_name)
         image = image or self.image
         return super(Container, self).fork(
-            name,
             image=image,
             options=options,
             **attrs
@@ -95,8 +110,8 @@ class Container(BaseService):
 
     def execute(
         self,
-        cmd=None,  # deprecated
         command=None,
+        cmd=None,  # deprecated
         ignore_errors=False,
         quiet=True,
         use_cache=False,

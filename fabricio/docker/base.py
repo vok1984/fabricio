@@ -21,9 +21,9 @@ class BaseService(object):
 
     lock = multiprocessing.RLock()
 
-    def __init__(self, name, options=None, **attrs):
-        self.name = name
+    name = Attribute()
 
+    def __init__(self, options=None, **attrs):
         options = options or {}
         self.overridden_options = set()
         is_main_option = self._main_options.__contains__
@@ -80,10 +80,7 @@ class BaseService(object):
 
     options = property(_get_options)
 
-    def fork(self, name=None, options=None, **attrs):
-        if name is None:
-            name = self.name
-
+    def fork(self, options=None, **attrs):
         fork_options = dict(
             (
                 (option, getattr(self, option))
@@ -103,7 +100,7 @@ class BaseService(object):
                 **attrs
             )
 
-        return self.__class__(name, options=fork_options, **attrs)
+        return self.__class__(options=fork_options, **attrs)
 
     def __str__(self):
         return self.name

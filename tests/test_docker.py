@@ -93,7 +93,7 @@ class ContainerTestCase(unittest.TestCase):
         )
         for case, data in cases.items():
             with self.subTest(case=case):
-                container = TestContainer('name', **data['kwargs'])
+                container = TestContainer(**data['kwargs'])
                 self.assertDictEqual(data['expected'], dict(container.options))
 
     def test_options_inheritance(self):
@@ -141,7 +141,7 @@ class ContainerTestCase(unittest.TestCase):
             def overridden_alias2(self):
                 return 'overridden_value'
 
-        container = Child('name')
+        container = Child()
 
         self.assertIn('user', container.options)
         self.assertEqual(container.options['user'], 'user')
@@ -216,7 +216,7 @@ class ContainerTestCase(unittest.TestCase):
 
             null = Attribute()  # new empty property
 
-        container = Container('name')
+        container = Container()
 
         self.assertEqual(container.command, 'command')
         container.command = 'command2'
@@ -245,7 +245,7 @@ class ContainerTestCase(unittest.TestCase):
         self.assertEqual(container.null, 'value')
 
     def test_container_does_not_allow_modify_options(self):
-        container = TestContainer('name')
+        container = TestContainer()
 
         # default options allowed to be modified
         container.user = 'user'
@@ -1380,10 +1380,11 @@ class ImageTestCase(unittest.TestCase):
                 },
             ),
             detached=dict(
-                kwargs=dict(temporary=False),
+                kwargs=dict(temporary=False, name='name'),
                 expected_command='docker run --detach image:latest ',
                 expected_args={
                     'executable': ['docker', 'run'],
+                    'name': 'name',
                     'detach': True,
                     'image': 'image:latest',
                     'command': [],
@@ -1455,7 +1456,7 @@ class ImageTestCase(unittest.TestCase):
         self.assertIs(Container.image, image)
         for case, data in cases.items():
             with self.subTest(case=case):
-                container = Container('name', image=data['image'])
+                container = Container(image=data['image'])
                 self.assertIs(container.image, container.image)
                 self.assertIsInstance(container.image, docker.Image)
                 self.assertEqual(container.image.name, data['expected_name'])
@@ -1473,7 +1474,7 @@ class ImageTestCase(unittest.TestCase):
 
         for case, data in cases.items():
             with self.subTest(case='redefine_' + case):
-                container = Container('name')
+                container = Container()
                 container.image = data['image']
                 self.assertIs(container.image, container.image)
                 self.assertIsInstance(container.image, docker.Image)
@@ -1493,7 +1494,7 @@ class ImageTestCase(unittest.TestCase):
         for case, data in cases.items():
             with self.subTest(case='predefined_' + case):
                 Container.image = docker.Image(data['image'])
-                container = Container('name')
+                container = Container()
                 self.assertIs(container.image, container.image)
                 self.assertIsInstance(container.image, docker.Image)
                 self.assertEqual(container.image.name, data['expected_name'])
@@ -1512,6 +1513,6 @@ class ImageTestCase(unittest.TestCase):
     def test_get_field_name_raises_error_on_collision(self):
         class Container(docker.Container):
             image2 = docker.Container.image
-        container = Container('name')
+        container = Container(name='name')
         with self.assertRaises(ValueError):
             _ = container.image
