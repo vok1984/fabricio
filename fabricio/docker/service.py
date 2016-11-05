@@ -15,7 +15,7 @@ class Service(BaseService):
 
     sentinel = None
 
-    lock = dummy_threading.RLock()
+    lock = dummy_threading.RLock()  # allow all tasks to be executed in parallel
 
     @default_property
     def image(self):
