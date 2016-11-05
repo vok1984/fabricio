@@ -200,3 +200,9 @@ class Image(object):
             ),
             quiet=quiet,
         )
+
+    def pull(self):
+        fabricio.run(
+            'docker pull {image}'.format(image=self),
+            quiet=False,
+        )

@@ -176,22 +176,22 @@ class DockerTasks(Tasks):
         self.container.revert()
 
     @fab.task
-    @fab.serial
     @skip_unknown_host
     def migrate(self, tag=None):
         """
         apply migrations
         """
-        self.container.migrate(tag=tag, registry=self.registry)
+        with self.container.lock:
+            self.container.migrate(tag=tag, registry=self.registry)
 
     @fab.task
-    @fab.serial
     @skip_unknown_host
     def migrate_back(self):
         """
         remove previously applied migrations if any
         """
-        self.container.migrate_back()
+        with self.container.lock:
+            self.container.migrate_back()
 
     @fab.task(task_class=IgnoreHostsTask)
     def rollback(self, migrate_back=True):
@@ -203,26 +203,26 @@ class DockerTasks(Tasks):
         fab.execute(self.revert)
 
     @fab.task
-    @fab.serial
     @skip_unknown_host
     def backup(self):
         """
         backup data
         """
-        if fab.env.infrastructure not in self._backup_done:
-            self._backup_done.add(fab.env.infrastructure)
-            self.container.backup()
+        with self.container.lock:
+            if fab.env.infrastructure not in self._backup_done:
+                self._backup_done.add(fab.env.infrastructure)
+                self.container.backup()
 
     @fab.task
-    @fab.serial
     @skip_unknown_host
     def restore(self, backup_filename=None):
         """
         restore data
         """
-        if fab.env.infrastructure not in self._restore_done:
-            self._restore_done.add(fab.env.infrastructure)
-            self.container.restore(backup_name=backup_filename)
+        with self.container.lock:
+            if fab.env.infrastructure not in self._restore_done:
+                self._restore_done.add(fab.env.infrastructure)
+                self.container.restore(backup_name=backup_filename)
 
     @fab.task
     @skip_unknown_host
@@ -230,10 +230,7 @@ class DockerTasks(Tasks):
         """
         pull Docker image from registry
         """
-        fabricio.run(
-            'docker pull {image}'.format(image=self.image[self.registry:tag]),
-            quiet=False,
-        )
+        self.container.pull_image(tag=tag, registry=self.registry)
 
     @fab.task
     @skip_unknown_host

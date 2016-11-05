@@ -184,3 +184,6 @@ class Container(BaseService):
 
     def get_backup_container(self):
         return self.fork(name='{container}_backup'.format(container=self))
+
+    def pull_image(self, tag=None, registry=None):
+        self.image[registry:tag].pull()

@@ -1,3 +1,5 @@
+import multiprocessing
+
 from cached_property import cached_property
 from frozendict import frozendict
 
@@ -16,6 +18,8 @@ class Attribute(default_property):
 
 
 class BaseService(object):
+
+    lock = multiprocessing.RLock()
 
     def __init__(self, name, options=None, **attrs):
         self.name = name
@@ -111,6 +115,9 @@ class BaseService(object):
         raise NotImplementedError
 
     def revert(self):
+        raise NotImplementedError
+
+    def pull_image(self, tag=None, registry=None):
         raise NotImplementedError
 
     def migrate(self, tag=None, registry=None):

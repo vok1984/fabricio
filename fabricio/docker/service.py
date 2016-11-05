@@ -1,3 +1,9 @@
+import dummy_threading
+
+from fabric import api as fab, colors
+
+import fabricio
+
 from fabricio.utils import default_property
 
 from .base import BaseService, Option, Attribute
@@ -8,6 +14,8 @@ from .image import Image
 class Service(BaseService):
 
     sentinel = None
+
+    lock = dummy_threading.RLock()
 
     @default_property
     def image(self):
@@ -82,14 +90,45 @@ class Service(BaseService):
     def revert(self):
         pass  # TODO
 
+    def pull_image(self, tag=None, registry=None):
+        try:
+            self.sentinel.pull_image(tag=tag, registry=registry)
+        except RuntimeError as error:
+            if self.is_manager():
+                # inability to pull image is critical only for Swarm managers
+                # because they have to keep up to date their sentinel containers
+                raise
+            fabricio.log(
+                "{host} could not pull image: {error}".format(
+                    host=fab.env.host,
+                    error=error,
+                ),
+                color=colors.red,
+            )
+
     def migrate(self, tag=None, registry=None):
-        self.sentinel.migrate(tag=tag, registry=registry)
+        if self.is_leader():
+            self.sentinel.migrate(tag=tag, registry=registry)
 
     def migrate_back(self):
-        self.sentinel.migrate_back()
+        if self.is_leader():
+            self.sentinel.migrate_back()
 
     def backup(self):
-        self.sentinel.backup()
+        if self.is_leader():
+            self.sentinel.backup()
 
     def restore(self, backup_name=None):
-        self.sentinel.restore(backup_name=backup_name)
+        if self.is_leader():
+            self.sentinel.restore(backup_name=backup_name)
+
+    @property
+    def _leader_status(self):
+        command = "docker node inspect --format '{{.ManagerStatus.Leader}}' self"  # noqa
+        return fabricio.run(command, ignore_errors=True, use_cache=True)
+
+    def is_manager(self):
+        return self._leader_status.succeeded
+
+    def is_leader(self):
+        return self._leader_status == 'true'
