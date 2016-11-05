@@ -99,8 +99,6 @@ class Image(object):
 
     @classmethod
     def make_container_options(cls, temporary=None, name=None, options=()):
-        if not (name or temporary):
-            raise TypeError('Must provide name to not temporary containers')
         return Options(
             options,
             name=name,

@@ -1,3 +1,5 @@
+from datetime import time
+
 import unittest2 as unittest
 
 from fabricio.utils import Options, OrderedDict
@@ -19,6 +21,10 @@ class OptionsTestCase(unittest.TestCase):
             integer=dict(
                 options=OrderedDict(foo=42),
                 expected_str_version='--foo 42',
+            ),
+            object=dict(
+                options=OrderedDict(time=time()),
+                expected_str_version='--time 00:00:00',
             ),
             triple_length=dict(
                 options=OrderedDict([

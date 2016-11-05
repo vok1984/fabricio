@@ -97,14 +97,14 @@ class Container(BaseService):
         self.image[registry:tag].run(
             command=self.command,
             temporary=False,
-            name=self.name,
+            name=self,
             options=self.options,
         )
 
     def create(self, tag=None, registry=None):
         self.image[registry:tag].create_container(
             command=self.command,
-            name=self.name,
+            name=self,
             options=self.options,
         )
 

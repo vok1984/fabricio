@@ -63,8 +63,13 @@ class Options(OrderedDict):
             elif isinstance(value, six.integer_types):
                 yield self.make_option(option, str(value))
             else:
-                for single_value in value:
-                    yield self.make_option(option, single_value)
+                try:
+                    values = iter(value)
+                except TypeError:
+                    yield self.make_option(option, str(value))
+                else:
+                    for single_value in values:
+                        yield self.make_option(option, single_value)
 
     def __str__(self):
         return ' '.join(self.make_options())

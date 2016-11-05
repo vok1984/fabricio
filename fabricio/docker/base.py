@@ -103,6 +103,8 @@ class BaseService(object):
         return self.__class__(options=fork_options, **attrs)
 
     def __str__(self):
+        if not self.name:
+            raise ValueError('name is not set or empty')
         return self.name
 
     def __copy__(self):
