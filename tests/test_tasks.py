@@ -152,22 +152,22 @@ class DockerTasksTestCase(unittest.TestCase):
     def test_commands_list(self):
         cases = dict(
             default=dict(
-                init_kwargs=dict(container='container'),
+                init_kwargs=dict(service='container'),
                 expected_commands_list=['pull', 'rollback', 'update', 'deploy'],
                 unexpected_commands_list=['revert', 'migrate', 'migrate_back', 'backup', 'restore'],
             ),
             migrate_tasks=dict(
-                init_kwargs=dict(container='container', migrate_commands=True),
+                init_kwargs=dict(service='container', migrate_commands=True),
                 expected_commands_list=['pull', 'rollback', 'update', 'deploy', 'migrate', 'migrate_back'],
                 unexpected_commands_list=['revert', 'backup', 'restore'],
             ),
             backup_tasks=dict(
-                init_kwargs=dict(container='container', backup_commands=True),
+                init_kwargs=dict(service='container', backup_commands=True),
                 expected_commands_list=['pull', 'rollback', 'update', 'deploy', 'backup', 'restore'],
                 unexpected_commands_list=['revert', 'migrate', 'migrate_back'],
             ),
             all_tasks=dict(
-                init_kwargs=dict(container='container', backup_commands=True, migrate_commands=True),
+                init_kwargs=dict(service='container', backup_commands=True, migrate_commands=True),
                 expected_commands_list=['pull', 'rollback', 'update', 'deploy', 'backup', 'restore', 'migrate', 'migrate_back'],
                 unexpected_commands_list=['revert'],
             ),
@@ -183,7 +183,7 @@ class DockerTasksTestCase(unittest.TestCase):
 
     @mock.patch.multiple(TestContainer, revert=mock.DEFAULT, migrate_back=mock.DEFAULT)
     def test_rollback(self, revert, migrate_back):
-        tasks_list = tasks.DockerTasks(container=TestContainer(), hosts=['host'])
+        tasks_list = tasks.DockerTasks(service=TestContainer(), hosts=['host'])
         rollback = mock.Mock()
         rollback.attach_mock(migrate_back, 'migrate_back')
         rollback.attach_mock(revert, 'revert')
@@ -290,7 +290,7 @@ class DockerTasksTestCase(unittest.TestCase):
         for case, data in cases.items():
             with self.subTest(case=case):
                 tasks_list = tasks.DockerTasks(
-                    container=TestContainer(name='name'),
+                    service=TestContainer(name='name'),
                     hosts=['host'],
                     **data.get('init_kwargs', {})
                 )
@@ -325,7 +325,7 @@ class DockerTasksTestCase(unittest.TestCase):
                     fab.execute(data['infrastructure'].confirm)
                 backup.reset_mock()
                 container = docker.Container()
-                commands = tasks.DockerTasks(container=container, hosts=['host'])
+                commands = tasks.DockerTasks(service=container, hosts=['host'])
                 fab.execute(commands.backup)
                 backup.assert_called_once()
                 fab.execute(commands.backup)
@@ -358,7 +358,7 @@ class DockerTasksTestCase(unittest.TestCase):
                     fab.execute(data['infrastructure'].confirm)
                 restore.reset_mock()
                 container = docker.Container()
-                commands = tasks.DockerTasks(container=container, hosts=['host'])
+                commands = tasks.DockerTasks(service=container, hosts=['host'])
                 fab.execute(commands.restore)
                 restore.assert_called_once()
                 fab.execute(commands.restore)
@@ -543,7 +543,7 @@ class PullDockerTasksTestCase(unittest.TestCase):
             with self.subTest(case=case):
                 run.return_value = data.get('registry_ip')
                 tasks_list = tasks.PullDockerTasks(
-                    container=TestContainer(name='name'),
+                    service=TestContainer(name='name'),
                     hosts=['host'],
                     **data.get('init_kwargs', {})
                 )
@@ -759,7 +759,7 @@ class BuildDockerTasksTestCase(unittest.TestCase):
             with self.subTest(case=case):
                 run.return_value = data.get('registry_ip')
                 tasks_list = tasks.BuildDockerTasks(
-                    container=TestContainer(name='name'),
+                    service=TestContainer(name='name'),
                     hosts=['host'],
                     **data.get('init_kwargs', {})
                 )
