@@ -61,7 +61,7 @@ class Label(RemovableOption):
 
         def get_comparison_value(self):
             # fetch label key
-            return self.split('=')[0]
+            return self.split('=', 1)[0]
 
 
 class Port(RemovableOption):
