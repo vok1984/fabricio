@@ -1539,7 +1539,6 @@ class ServiceTestCase(unittest.TestCase):
                 init_kwargs=dict(
                     name='service',
                     image='image:tag',
-                    args='arg1 "arg2" \'arg3\'',
                     command='command',
                 ),
                 service_info=dict(),
@@ -1547,7 +1546,6 @@ class ServiceTestCase(unittest.TestCase):
                     'executable': ['docker', 'service', 'update'],
                     'image': 'image_id',
                     'replicas': '1',
-                    'args': r'''"arg1 \"arg2\" 'arg3'"''',
                     'service': 'service',
                 },
             ),
@@ -1555,6 +1553,7 @@ class ServiceTestCase(unittest.TestCase):
                 init_kwargs=dict(
                     name='service',
                     image='image:tag',
+                    args='arg1 "arg2" \'arg3\'',
                     options=dict(
                         ports='source:target',
                         mounts='type=volume,destination=/path',
@@ -1584,6 +1583,7 @@ class ServiceTestCase(unittest.TestCase):
                     'restart-condition': 'on-failure',
                     'stop-grace-period': '10',
                     'custom_option': 'custom_value',
+                    'args': r'''"arg1 \"arg2\" 'arg3'"''',
                 },
             ),
             new_options_values=dict(
