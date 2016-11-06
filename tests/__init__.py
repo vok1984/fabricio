@@ -56,7 +56,7 @@ docker_service_update_args_parser.add_argument('--user')
 docker_service_update_args_parser.add_argument('--network')
 docker_service_update_args_parser.add_argument('--stop-grace-period', dest='stop-grace-period')
 docker_service_update_args_parser.add_argument('--args')
-docker_service_update_args_parser.add_argument('--custom-option', dest='custom-option')
+docker_service_update_args_parser.add_argument('--custom_option')
 docker_service_update_args_parser.add_argument('service')
 
 args_parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)

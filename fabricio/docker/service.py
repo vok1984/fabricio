@@ -214,6 +214,7 @@ class Service(BaseService):
                 ),
                 image=self.image,
                 args=self.args,
+                **self._additional_options
             )
         finally:
             _service_data.clear()

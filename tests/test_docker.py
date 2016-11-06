@@ -1558,6 +1558,7 @@ class ServiceTestCase(unittest.TestCase):
                         network='network',
                         restart_condition='on-failure',
                         stop_timeout=10,
+                        custom_option='custom_value',
                     ),
                 ),
                 service_info=dict(),
@@ -1573,6 +1574,7 @@ class ServiceTestCase(unittest.TestCase):
                     'network': 'network',
                     'restart-condition': 'on-failure',
                     'stop-grace-period': '10',
+                    'custom_option': 'custom_value',
                 },
             ),
             new_options_values=dict(
