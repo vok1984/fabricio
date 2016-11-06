@@ -1,13 +1,12 @@
 import contextlib
 
 from copy import copy
+from distutils import util as distutils
 
 try:
     from collections import OrderedDict
 except ImportError:
     from ordereddict import OrderedDict
-
-from distutils import util as distutils
 
 import six
 
@@ -77,3 +76,15 @@ class Options(OrderedDict):
 
 def strtobool(value):
     return bool(distutils.strtobool(str(value)))
+
+
+class Cast(six.text_type):
+
+    def __hash__(self):
+        return hash(self.get_comparison_value())
+
+    def __eq__(self, other):
+        return self.get_comparison_value() == other
+
+    def get_comparison_value(self):
+        return self

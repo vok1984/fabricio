@@ -1,6 +1,7 @@
 import dummy_threading
 import functools
 import json
+import re
 import sys
 
 import six
@@ -11,7 +12,7 @@ from frozendict import frozendict
 
 import fabricio
 
-from fabricio.utils import Options
+from fabricio import utils
 
 from .base import BaseService, Option, Attribute
 from .container import Container
@@ -22,6 +23,8 @@ _service_data = {}
 class RemovableOption(Option):
 
     get_values = '[]'.format
+
+    cast_new_value = six.text_type
 
     def __init__(self, func=None, get_values=None, **kwargs):
         super(RemovableOption, self).__init__(func=func, **kwargs)
@@ -46,20 +49,19 @@ class RemovableOption(Option):
         return set(current_values).difference(new_values)
 
     def get_add_values(self, service, service_attr):
-        return getattr(service, service_attr)
+        values = getattr(service, service_attr)
+        if values is None:
+            return []
+        if isinstance(values, six.string_types):
+            values = [values]
+        return map(self.cast_new_value, values)
 
 
 class Port(RemovableOption):
 
     get_values = '{0[Spec][EndpointSpec][Ports]!r}'.format
 
-    class Cast(six.text_type):
-
-        def __hash__(self):
-            return hash(self.get_comparison_value())
-
-        def __eq__(self, other):
-            return self.get_comparison_value() == other
+    class cast_new_value(utils.Cast):
 
         def get_comparison_value(self):
             # fetch target port
@@ -71,18 +73,27 @@ class Port(RemovableOption):
             for value in super(Port, self).get_current_values(service)
         ]
 
-    def get_add_values(self, service, service_attr):
-        new_values = super(Port, self).get_add_values(service, service_attr)
-        if new_values is None:
-            return None
-        if isinstance(new_values, six.string_types):
-            return self.Cast(new_values)
-        return map(self.Cast, new_values)
-
 
 class Mount(RemovableOption):
 
     get_values = '{0[Spec][TaskTemplate][ContainerSpec][Mounts]!r}'.format
+
+    class cast_new_value(utils.Cast):
+
+        def get_comparison_value(self):
+            # fetch target path
+            match = re.search(
+                'destination=("[^"]*"|[^,]*|\'[^\']*\')',
+                self,
+                re.UNICODE,
+            )
+            return match and match.group(1).strip('"\'')
+
+    def get_current_values(self, service):
+        return [
+            value['Target']
+            for value in super(Mount, self).get_current_values(service)
+        ]
 
 
 class Service(BaseService):
@@ -104,7 +115,7 @@ class Service(BaseService):
 
     replicas = Option(default=1)
 
-    mount = Mount()
+    mounts = Mount(name='mount')
 
     network = Option()
 
@@ -202,7 +213,7 @@ class Service(BaseService):
             self._create()
         else:
             fabricio.run('docker service update {options} {service}'.format(
-                options=Options(self.update_options),
+                options=utils.Options(self.update_options),
                 service=self,
             ))
 
