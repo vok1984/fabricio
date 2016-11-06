@@ -78,7 +78,7 @@ def strtobool(value):
     return bool(distutils.strtobool(str(value)))
 
 
-class Cast(six.text_type):
+class Item(six.text_type):
 
     def __hash__(self):
         return hash(self.get_comparison_value())
@@ -87,4 +87,4 @@ class Cast(six.text_type):
         return self.get_comparison_value() == other
 
     def get_comparison_value(self):
-        return self
+        raise NotImplementedError

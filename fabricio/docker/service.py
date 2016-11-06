@@ -24,7 +24,7 @@ class RemovableOption(Option):
 
     get_values = '[]'.format
 
-    cast_new_value = six.text_type
+    new_value = six.text_type
 
     def __init__(self, func=None, get_values=None, **kwargs):
         super(RemovableOption, self).__init__(func=func, **kwargs)
@@ -54,14 +54,14 @@ class RemovableOption(Option):
             return []
         if isinstance(values, six.string_types):
             values = [values]
-        return map(self.cast_new_value, values)
+        return map(self.new_value, values)
 
 
 class Port(RemovableOption):
 
     get_values = '{0[Spec][EndpointSpec][Ports]!r}'.format
 
-    class cast_new_value(utils.Cast):
+    class new_value(utils.Item):
 
         def get_comparison_value(self):
             # fetch target port
@@ -78,7 +78,7 @@ class Mount(RemovableOption):
 
     get_values = '{0[Spec][TaskTemplate][ContainerSpec][Mounts]!r}'.format
 
-    class cast_new_value(utils.Cast):
+    class new_value(utils.Item):
 
         def get_comparison_value(self):
             # fetch target path
