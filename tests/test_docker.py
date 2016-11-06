@@ -1535,7 +1535,7 @@ class ServiceTestCase(unittest.TestCase):
             options = docker_service_update_args_parser.parse_args(args)
             self.assertDictEqual(vars(options), data['expected_args'])
         cases = dict(
-            basic=dict(
+            minimum=dict(
                 init_kwargs=dict(
                     name='service',
                     image='image:tag',
@@ -1583,7 +1583,7 @@ class ServiceTestCase(unittest.TestCase):
                     'restart-condition': 'on-failure',
                     'stop-grace-period': '10',
                     'custom_option': 'custom_value',
-                    'args': r'''"arg1 \"arg2\" 'arg3'"''',
+                    'args': '"arg1 \\"arg2\\" \'arg3\'"',
                 },
             ),
             new_options_values=dict(
