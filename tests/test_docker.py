@@ -1,4 +1,5 @@
 import mock
+import re
 import unittest2 as unittest
 
 import fabricio
@@ -1530,7 +1531,8 @@ class ServiceTestCase(unittest.TestCase):
     def test__update(self, *args):
         def sd(command, **kwargs):
             # print('{case}: {command}'.format(case=case, command=command))
-            options = docker_service_update_args_parser.parse_args(command.split())
+            args = re.findall('"[^"]+"|\'[^\']+\'|[^\s]+', command, flags=re.UNICODE)
+            options = docker_service_update_args_parser.parse_args(args)
             self.assertDictEqual(vars(options), data['expected_args'])
         cases = dict(
             basic=dict(
@@ -1554,6 +1556,8 @@ class ServiceTestCase(unittest.TestCase):
                         ports='source:target',
                         mounts='type=volume,destination=/path',
                         labels='label=value',
+                        env='FOO=bar',
+                        constraints='"node.role == manager"',
                         container_labels='label=value',
                         network='network',
                         restart_condition='on-failure',
@@ -1569,6 +1573,8 @@ class ServiceTestCase(unittest.TestCase):
                     'publish-add': ['source:target'],
                     'mount-add': ['type=volume,destination=/path'],
                     'label-add': ['label=value'],
+                    'env-add': ['FOO=bar'],
+                    'constraint-add': ['"node.role == manager"'],
                     'container-label-add': ['label=value'],
                     'service': 'service',
                     'network': 'network',
@@ -1598,6 +1604,14 @@ class ServiceTestCase(unittest.TestCase):
                             'label=value',
                             'label2=value2',
                         ],
+                        constraints=[
+                            '"node.role == manager"',
+                            "'node.role == worker'",
+                        ],
+                        env=[
+                            'FOO=bar',
+                            'FOO2=bar2',
+                        ],
                     ),
                 ),
                 service_info=dict(),
@@ -1611,6 +1625,11 @@ class ServiceTestCase(unittest.TestCase):
                         'type=volume,destination=/path2',
                     ],
                     'label-add': ['label=value', 'label2=value2'],
+                    'constraint-add': [
+                        '"node.role == manager"',
+                        "'node.role == worker'",
+                    ],
+                    'env-add': ['FOO=bar', 'FOO2=bar2'],
                     'container-label-add': ['label=value', 'label2=value2'],
                     'service': 'service',
                 },
@@ -1630,6 +1649,9 @@ class ServiceTestCase(unittest.TestCase):
                                 Labels=dict(
                                     label='value',
                                 ),
+                                Env=[
+                                    'FOO=bar',
+                                ],
                                 Mounts=[
                                     dict(
                                         Type='volume',
@@ -1637,6 +1659,11 @@ class ServiceTestCase(unittest.TestCase):
                                         Target='/path',
                                     ),
                                 ]
+                            ),
+                            Placement=dict(
+                                Constraints=[
+                                    '"node.role == manager"',
+                                ],
                             ),
                         ),
                         EndpointSpec=dict(
@@ -1657,6 +1684,8 @@ class ServiceTestCase(unittest.TestCase):
                     'publish-rm': ['target'],
                     'mount-rm': ['/path'],
                     'label-rm': ['label'],
+                    'env-rm': ['FOO=bar'],
+                    'constraint-rm': ['"node.role == manager"'],
                     'container-label-rm': ['label'],
                     'service': 'service',
                 },
@@ -1669,6 +1698,8 @@ class ServiceTestCase(unittest.TestCase):
                         ports='source2:target2',
                         mounts='type=volume,destination=/path',
                         labels='label=value',
+                        env='FOO=bar',
+                        constraints='"node.role == manager"',
                         container_labels='label=value',
                     ),
                 ),
@@ -1684,6 +1715,10 @@ class ServiceTestCase(unittest.TestCase):
                                     label='value',
                                     label2='value2',
                                 ),
+                                Env=[
+                                    'FOO=bar',
+                                    'FOO2=bar2',
+                                ],
                                 Mounts=[
                                     dict(
                                         Type='volume',
@@ -1696,6 +1731,12 @@ class ServiceTestCase(unittest.TestCase):
                                         Target='/path2',
                                     ),
                                 ]
+                            ),
+                            Placement=dict(
+                                Constraints=[
+                                    '"node.role == manager"',
+                                    "'node.role == worker'",
+                                ],
                             ),
                         ),
                         EndpointSpec=dict(
@@ -1724,6 +1765,10 @@ class ServiceTestCase(unittest.TestCase):
                     'mount-add': ['type=volume,destination=/path'],
                     'label-rm': ['label2'],
                     'label-add': ['label=value'],
+                    'env-rm': ['FOO2=bar2'],
+                    'env-add': ['FOO=bar'],
+                    'constraint-rm': ["'node.role == worker'"],
+                    'constraint-add': ['"node.role == manager"'],
                     'container-label-rm': ['label2'],
                     'container-label-add': ['label=value'],
                     'service': 'service',
@@ -1746,6 +1791,14 @@ class ServiceTestCase(unittest.TestCase):
                             'label=value',
                             'label2=value2',
                         ],
+                        env=[
+                            'FOO=bar',
+                            'FOO2=bar2',
+                        ],
+                        constraints=[
+                            '"node.role == manager"',
+                            "'node.role == worker'",
+                        ],
                         container_labels=[
                             'label=value',
                             'label2=value2',
@@ -1766,6 +1819,11 @@ class ServiceTestCase(unittest.TestCase):
                                     label2='value2',
                                     label3='value3',
                                 ),
+                                Env=[
+                                    'FOO=bar',
+                                    'FOO2=bar2',
+                                    'FOO3=bar3',
+                                ],
                                 Mounts=[
                                     dict(
                                         Type='volume',
@@ -1783,6 +1841,13 @@ class ServiceTestCase(unittest.TestCase):
                                         Target='/path3',
                                     ),
                                 ]
+                            ),
+                            Placement=dict(
+                                Constraints=[
+                                    '"node.role == manager"',
+                                    "'node.role == worker'",
+                                    'constraint',
+                                ],
                             ),
                         ),
                         EndpointSpec=dict(
@@ -1814,6 +1879,13 @@ class ServiceTestCase(unittest.TestCase):
                     'publish-add': ['source2:target2', 'source3:target3'],
                     'label-rm': ['label3'],
                     'label-add': ['label=value', 'label2=value2'],
+                    'env-rm': ['FOO3=bar3'],
+                    'env-add': ['FOO=bar', 'FOO2=bar2'],
+                    'constraint-rm': ['constraint'],
+                    'constraint-add': [
+                        '"node.role == manager"',
+                        "'node.role == worker'",
+                    ],
                     'container-label-rm': ['label3'],
                     'container-label-add': ['label=value', 'label2=value2'],
                     'mount-rm': ['/path3'],

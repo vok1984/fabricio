@@ -32,9 +32,7 @@ class RemovableOption(Option):
 
     def get_current_values(self, service):
         info = _service_data['info'] = _service_data.get('info') or service.info
-        values_data = self.get_values(info)
-        values_data = values_data.replace("'", '"').replace('u"', '"')
-        return json.loads(values_data)
+        return eval(self.get_values(info))
 
     def get_remove_values(self, service, service_attr):
         try:
@@ -122,14 +120,16 @@ class Service(BaseService):
 
     args = Attribute()  # TODO
 
-    labels = Label(
-        name='label',
-        get_values='{0[Spec][Labels]!r}'.format,
-    )
+    labels = Label(name='label', get_values='{0[Spec][Labels]!r}'.format)
 
     container_labels = Label(
         name='container-label',
         get_values='{0[Spec][TaskTemplate][ContainerSpec][Labels]!r}'.format,
+    )
+
+    constraints = RemovableOption(
+        name='constraint',
+        get_values='{0[Spec][TaskTemplate][Placement][Constraints]!r}'.format,
     )
 
     replicas = Option(default=1)
