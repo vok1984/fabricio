@@ -1531,7 +1531,7 @@ class ServiceTestCase(unittest.TestCase):
     def test__update(self, *args):
         def sd(command, **kwargs):
             # print('{case}: {command}'.format(case=case, command=command))
-            args = re.findall('"[^"]+"|\'[^\']+\'|[^\s]+', command, flags=re.UNICODE)
+            args = re.findall('".+?(?<!\\\\)"|\'.+?(?<!\\\\)\'|[^\s]+', command, flags=re.UNICODE)
             options = docker_service_update_args_parser.parse_args(args)
             self.assertDictEqual(vars(options), data['expected_args'])
         cases = dict(
@@ -1545,6 +1545,21 @@ class ServiceTestCase(unittest.TestCase):
                     'executable': ['docker', 'service', 'update'],
                     'image': 'image_id',
                     'replicas': '1',
+                    'service': 'service',
+                },
+            ),
+            update_args=dict(
+                init_kwargs=dict(
+                    name='service',
+                    image='image:tag',
+                    args='arg1 "arg2" \'arg3\'',
+                ),
+                service_info=dict(),
+                expected_args={
+                    'executable': ['docker', 'service', 'update'],
+                    'image': 'image_id',
+                    'replicas': '1',
+                    'args': r'''"arg1 \"arg2\" 'arg3'"''',
                     'service': 'service',
                 },
             ),

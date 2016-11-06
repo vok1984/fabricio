@@ -118,7 +118,7 @@ class Service(BaseService):
     def command(self):
         return self.sentinel.command
 
-    args = Attribute()  # TODO
+    args = Attribute()
 
     labels = Label(name='label', get_values='{0[Spec][Labels]!r}'.format)
 
@@ -207,13 +207,14 @@ class Service(BaseService):
     @property
     def update_options(self):
         try:
+            args = self.args
             return frozendict(
                 (
                     (option, callback(self))
                     for option, callback in self._update_options.items()
                 ),
                 image=self.image,
-                args=self.args,
+                args=args and '"{0}"'.format(args.replace('"', '\\"')),
                 **self._additional_options
             )
         finally:
