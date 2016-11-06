@@ -1,4 +1,5 @@
 import dummy_threading
+import functools
 import json
 import sys
 
@@ -9,6 +10,8 @@ from fabric import api as fab, colors
 from frozendict import frozendict
 
 import fabricio
+
+from fabricio.utils import Options
 
 from .base import BaseService, Option, Attribute
 from .container import Container
@@ -30,22 +33,51 @@ class RemovableOption(Option):
         values_data = values_data.replace("'", '"').replace('u"', '"')
         return json.loads(values_data)
 
-    def get_remove_values(self, service):
-        current_values = self.get_current_values(service)
+    def get_remove_values(self, service, service_attr):
+        try:
+            current_values = self.get_current_values(service)
+        except KeyError:
+            return None
         if not current_values:
             return None
-        new_values = self.get_add_values(service)
+        new_values = self.get_add_values(service, service_attr) or []
         if isinstance(new_values, six.string_types):
             new_values = [new_values]
         return set(current_values).difference(new_values)
 
-    def get_add_values(self, service):
-        return self.__get__(service)
+    def get_add_values(self, service, service_attr):
+        return getattr(service, service_attr)
 
 
 class Port(RemovableOption):
 
     get_values = '{0[Spec][EndpointSpec][Ports]!r}'.format
+
+    class Cast(six.text_type):
+
+        def __hash__(self):
+            return hash(self.get_comparison_value())
+
+        def __eq__(self, other):
+            return self.get_comparison_value() == other
+
+        def get_comparison_value(self):
+            # fetch target port
+            return self.rsplit('/', 1)[0].rsplit(':', 1)[-1]
+
+    def get_current_values(self, service):
+        return [
+            value['TargetPort']
+            for value in super(Port, self).get_current_values(service)
+        ]
+
+    def get_add_values(self, service, service_attr):
+        new_values = super(Port, self).get_add_values(service, service_attr)
+        if new_values is None:
+            return None
+        if isinstance(new_values, six.string_types):
+            return self.Cast(new_values)
+        return map(self.Cast, new_values)
 
 
 class Mount(RemovableOption):
@@ -68,7 +100,7 @@ class Service(BaseService):
     def command(self):
         return self.sentinel.command
 
-    args = Attribute()
+    args = Attribute()  # TODO
 
     replicas = Option(default=1)
 
@@ -129,12 +161,17 @@ class Service(BaseService):
         for cls in type(self).__mro__[::-1]:
             for attr, option in vars(cls).items():
                 if isinstance(option, Option):
+                    def get_values(service, attr=attr):
+                        return getattr(service, attr)
                     name = option.name or attr
                     if isinstance(option, RemovableOption):
-                        options[name + '-rm'] = option.get_remove_values
-                        options[name + '-add'] = option.get_add_values
+                        options[name + '-rm'] = functools.partial(
+                            option.get_remove_values,
+                            service_attr=attr,
+                        )
+                        options[name + '-add'] = get_values
                     else:
-                        options[name] = option.__get__
+                        options[name] = get_values
         return options
 
     @property
@@ -165,7 +202,7 @@ class Service(BaseService):
             self._create()
         else:
             fabricio.run('docker service update {options} {service}'.format(
-                options=self.update_options,
+                options=Options(self.update_options),
                 service=self,
             ))
 

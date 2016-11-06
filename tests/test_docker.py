@@ -5,7 +5,8 @@ import fabricio
 
 from fabricio import docker
 from fabricio.docker.container import Option, Attribute
-from tests import SucceededResult, docker_run_args_parser
+from tests import SucceededResult, docker_run_args_parser, \
+    docker_service_update_args_parser
 
 
 class TestContainer(docker.Container):
@@ -1516,3 +1517,142 @@ class ImageTestCase(unittest.TestCase):
         container = Container(name='name')
         with self.assertRaises(ValueError):
             _ = container.image
+
+
+class ServiceTestCase(unittest.TestCase):
+
+    @mock.patch.object(
+        docker.Container,
+        'info',
+        new_callable=mock.PropertyMock,
+        return_value=dict(Image='image_id'),
+    )
+    def test__update(self, *args):
+        def sd(command, **kwargs):
+            # print('{case}: {command}'.format(case=case, command=command))
+            options = docker_service_update_args_parser.parse_args(command.split())
+            self.assertDictEqual(vars(options), data['expected_args'])
+        cases = dict(
+            basic=dict(
+                init_kwargs=dict(
+                    name='service',
+                    image='image:tag',
+                ),
+                service_info=dict(),
+                expected_args={
+                    'executable': ['docker', 'service', 'update'],
+                    'image': 'image_id',
+                    'replicas': '1',
+                    'service': 'service',
+                },
+            ),
+            new_port=dict(
+                init_kwargs=dict(
+                    name='service',
+                    image='image:tag',
+                    options=dict(
+                        ports='source:target',
+                    ),
+                ),
+                service_info=dict(),
+                expected_args={
+                    'executable': ['docker', 'service', 'update'],
+                    'image': 'image_id',
+                    'replicas': '1',
+                    'publish-add': ['source:target'],
+                    'service': 'service',
+                },
+            ),
+            new_ports=dict(
+                init_kwargs=dict(
+                    name='service',
+                    image='image:tag',
+                    options=dict(
+                        ports=[
+                            'source:target',
+                            'source2:target2',
+                        ],
+                    ),
+                ),
+                service_info=dict(),
+                expected_args={
+                    'executable': ['docker', 'service', 'update'],
+                    'image': 'image_id',
+                    'replicas': '1',
+                    'publish-add': ['source:target', 'source2:target2'],
+                    'service': 'service',
+                },
+            ),
+            remove_port=dict(
+                init_kwargs=dict(
+                    name='service',
+                    image='image:tag',
+                ),
+                service_info=dict(
+                    Spec=dict(
+                        EndpointSpec=dict(
+                            Ports=[
+                                dict(
+                                    TargetPort='target',
+                                    Protocol='tcp',
+                                    PublishedPort='source',
+                                ),
+                            ],
+                        ),
+                    ),
+                ),
+                expected_args={
+                    'executable': ['docker', 'service', 'update'],
+                    'image': 'image_id',
+                    'replicas': '1',
+                    'publish-rm': ['target'],
+                    'service': 'service',
+                },
+            ),
+            remove_single_port_from_two=dict(
+                init_kwargs=dict(
+                    name='service',
+                    image='image:tag',
+                    options=dict(
+                        ports='source2:target2',
+                    ),
+                ),
+                service_info=dict(
+                    Spec=dict(
+                        EndpointSpec=dict(
+                            Ports=[
+                                dict(
+                                    TargetPort='target',
+                                    Protocol='tcp',
+                                    PublishedPort='source',
+                                ),
+                                dict(
+                                    TargetPort='target2',
+                                    Protocol='tcp',
+                                    PublishedPort='source2',
+                                ),
+                            ],
+                        ),
+                    ),
+                ),
+                expected_args={
+                    'executable': ['docker', 'service', 'update'],
+                    'image': 'image_id',
+                    'replicas': '1',
+                    'publish-rm': ['target'],
+                    'publish-add': ['source2:target2'],
+                    'service': 'service',
+                },
+            ),
+        )
+        for case, data in cases.items():
+            with self.subTest(case=case):
+                with mock.patch.object(
+                    docker.Service,
+                    'info',
+                    new_callable=mock.PropertyMock,
+                    return_value=data['service_info'],
+                ):
+                    with mock.patch.object(fabricio, 'run', side_effect=sd):
+                        service = docker.Service(**data['init_kwargs'])
+                        service._update()

@@ -74,6 +74,9 @@ class Image(object):
             registry=registry or self.registry,
         )
 
+    def __iter__(self):
+        raise TypeError
+
     def get_field_name(self, owner_cls):
         field_name = self.field_names.get(owner_cls)
         if field_name is None:
