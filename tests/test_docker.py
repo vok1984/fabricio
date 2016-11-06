@@ -1597,7 +1597,7 @@ class ServiceTestCase(unittest.TestCase):
                         ],
                         mounts=[
                             'type=volume,destination=/path',
-                            'type=volume,destination=/path2',
+                            'type=volume,destination="/path2"',
                         ],
                         labels=[
                             'label=value',
@@ -1625,7 +1625,7 @@ class ServiceTestCase(unittest.TestCase):
                     'publish-add': ['source:target', 'source2:target2'],
                     'mount-add': [
                         'type=volume,destination=/path',
-                        'type=volume,destination=/path2',
+                        'type=volume,destination="/path2"',
                     ],
                     'label-add': ['label=value', 'label2=value2'],
                     'constraint-add': [
@@ -1788,7 +1788,7 @@ class ServiceTestCase(unittest.TestCase):
                         ],
                         mounts=[
                             'type=volume,destination=/path',
-                            'type=volume,destination=/path2',
+                            'type=volume,destination="/path2"',
                         ],
                         labels=[
                             'label=value',
@@ -1894,7 +1894,7 @@ class ServiceTestCase(unittest.TestCase):
                     'mount-rm': ['/path3'],
                     'mount-add': [
                         'type=volume,destination=/path',
-                        'type=volume,destination=/path2',
+                        'type=volume,destination="/path2"',
                     ],
                     'service': 'service',
                 },
