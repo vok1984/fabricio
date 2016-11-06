@@ -53,6 +53,8 @@ docker_service_update_args_parser.add_argument('--container-label-rm', dest='con
 docker_service_update_args_parser.add_argument('--replicas')
 docker_service_update_args_parser.add_argument('--restart-condition', dest='restart-condition')
 docker_service_update_args_parser.add_argument('--user')
+docker_service_update_args_parser.add_argument('--network')
+docker_service_update_args_parser.add_argument('--stop-grace-period', dest='stop-grace-period')
 docker_service_update_args_parser.add_argument('--args')
 docker_service_update_args_parser.add_argument('--custom-option', dest='custom-option')
 docker_service_update_args_parser.add_argument('service')
