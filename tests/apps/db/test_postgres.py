@@ -811,7 +811,7 @@ class StreamingReplicatedPostgresqlContainerTestCase(unittest.TestCase):
         class AbortException(Exception):
             pass
         container = postgres.StreamingReplicatedPostgresqlContainer(
-            'name',
+            name='name',
             options=dict(volumes='/data:/data'),
         )
         fab.env.parallel = False
@@ -823,7 +823,7 @@ class StreamingReplicatedPostgresqlContainerTestCase(unittest.TestCase):
         class AbortException(Exception):
             pass
         container = postgres.StreamingReplicatedPostgresqlContainer(
-            'name',
+            name='name',
             options=dict(volumes='/data:/data'),
         )
         with fab.settings(abort_exception=AbortException):
@@ -894,7 +894,7 @@ class StreamingReplicatedPostgresqlContainerTestCase(unittest.TestCase):
         class AbortException(Exception):
             pass
         container = postgres.StreamingReplicatedPostgresqlContainer(
-            'name', options=dict(volumes='volume'),
+            name='name', options=dict(volumes='volume'),
         )
         container.multiprocessing_data.exception = Exception('exception')
         with fab.settings(abort_exception=AbortException):
@@ -919,7 +919,7 @@ class StreamingReplicatedPostgresqlContainerTestCase(unittest.TestCase):
             ),
         )
         container = postgres.StreamingReplicatedPostgresqlContainer(
-            'name', options=dict(volumes='volume'),
+            name='name', options=dict(volumes='volume'),
         )
         with fab.settings(parallel=True):
             for case, data in cases.items():
