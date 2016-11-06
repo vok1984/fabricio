@@ -14,18 +14,33 @@ from .container import Container
 
 class RemovableOption(Option):
 
+    def __init__(self, func=None, get_values=None, **kwargs):
+        super(RemovableOption, self).__init__(func=func, **kwargs)
+        self.get_values = get_values
+
     def get_remove_value(self, service):
         pass  # TODO
 
     def get_add_value(self, service):
-        pass  # TODO
+        return self.__get__(service)
+
+
+class Port(RemovableOption):
+
+    pass  # TODO
+
+
+class Mount(RemovableOption):
+
+    pass  # TODO
 
 
 class Service(BaseService):
 
     sentinel = None
 
-    lock = dummy_threading.RLock()  # allow all tasks to be executed in parallel
+    # allow all tasks to be executed in parallel
+    lock = dummy_threading.RLock()
 
     @property
     def image(self):
@@ -39,7 +54,7 @@ class Service(BaseService):
 
     replicas = Option(default=1)
 
-    mount = RemovableOption()
+    mount = Mount(get_values='{0[Spec][TaskTemplate][ContainerSpec][Mounts]}')
 
     network = Option()
 
@@ -49,14 +64,12 @@ class Service(BaseService):
     def stop_timeout(self):
         return self.sentinel and self.sentinel.stop_timeout
 
-    @Option
+    @RemovableOption(get_values='{0[Spec][TaskTemplate][ContainerSpec][Env]}')
     def env(self):
-        # env = service_spec.get('TaskTemplate', {}).get('ContainerSpec', {}).get('Env', [])  # noqa
         return self.sentinel and self.sentinel.env
 
-    @RemovableOption(name='publish')
+    @Port(name='publish', get_values='{0[Spec][EndpointSpec][Ports]}')
     def ports(self):
-        # ports = service_spec.get('EndpointSpec', {}).get('Ports', [])
         return self.sentinel.ports
 
     @Option
@@ -161,7 +174,8 @@ class Service(BaseService):
         except RuntimeError as error:
             if self.is_manager():
                 # inability to pull image is critical only for Swarm managers
-                # because they have to keep up to date their sentinel containers
+                # because they have to keep up to date their sentinel
+                # containers
                 raise
             fabricio.log(
                 "WARNING: {host} could not pull image: {error}".format(
@@ -190,8 +204,11 @@ class Service(BaseService):
 
     @property
     def _leader_status(self):
-        command = "docker node inspect --format '{{.ManagerStatus.Leader}}' self"  # noqa
-        return fabricio.run(command, ignore_errors=True, use_cache=True)
+        return fabricio.run(
+            "docker node inspect --format '{{.ManagerStatus.Leader}}' self",
+            ignore_errors=True,
+            use_cache=True,
+        )
 
     def is_manager(self):
         # 'docker node inspect self' command works only on manager nodes
