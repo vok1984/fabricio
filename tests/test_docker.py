@@ -1539,20 +1539,8 @@ class ServiceTestCase(unittest.TestCase):
                 init_kwargs=dict(
                     name='service',
                     image='image:tag',
-                ),
-                service_info=dict(),
-                expected_args={
-                    'executable': ['docker', 'service', 'update'],
-                    'image': 'image_id',
-                    'replicas': '1',
-                    'service': 'service',
-                },
-            ),
-            update_args=dict(
-                init_kwargs=dict(
-                    name='service',
-                    image='image:tag',
                     args='arg1 "arg2" \'arg3\'',
+                    command='command',
                 ),
                 service_info=dict(),
                 expected_args={
