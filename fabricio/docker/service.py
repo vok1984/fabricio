@@ -57,6 +57,15 @@ class RemovableOption(Option):
         return map(self.new_value, values)
 
 
+class Label(RemovableOption):
+
+    class new_value(utils.Item):
+
+        def get_comparison_value(self):
+            # fetch label key
+            return self.split('=')[0]
+
+
 class Port(RemovableOption):
 
     get_values = '{0[Spec][EndpointSpec][Ports]!r}'.format
@@ -112,6 +121,16 @@ class Service(BaseService):
         return self.sentinel.command
 
     args = Attribute()  # TODO
+
+    labels = Label(
+        name='label',
+        get_values='{0[Spec][Labels]!r}'.format,
+    )
+
+    container_labels = Label(
+        name='container-label',
+        get_values='{0[Spec][TaskTemplate][ContainerSpec][Labels]!r}'.format,
+    )
 
     replicas = Option(default=1)
 

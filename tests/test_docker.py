@@ -1553,6 +1553,8 @@ class ServiceTestCase(unittest.TestCase):
                     options=dict(
                         ports='source:target',
                         mounts='type=volume,destination=/path',
+                        labels='label=value',
+                        container_labels='label=value',
                     ),
                 ),
                 service_info=dict(),
@@ -1562,6 +1564,8 @@ class ServiceTestCase(unittest.TestCase):
                     'replicas': '1',
                     'publish-add': ['source:target'],
                     'mount-add': ['type=volume,destination=/path'],
+                    'label-add': ['label=value'],
+                    'container-label-add': ['label=value'],
                     'service': 'service',
                 },
             ),
@@ -1578,6 +1582,14 @@ class ServiceTestCase(unittest.TestCase):
                             'type=volume,destination=/path',
                             'type=volume,destination=/path2',
                         ],
+                        labels=[
+                            'label=value',
+                            'label2=value2',
+                        ],
+                        container_labels=[
+                            'label=value',
+                            'label2=value2',
+                        ],
                     ),
                 ),
                 service_info=dict(),
@@ -1590,6 +1602,8 @@ class ServiceTestCase(unittest.TestCase):
                         'type=volume,destination=/path',
                         'type=volume,destination=/path2',
                     ],
+                    'label-add': ['label=value', 'label2=value2'],
+                    'container-label-add': ['label=value', 'label2=value2'],
                     'service': 'service',
                 },
             ),
@@ -1600,8 +1614,14 @@ class ServiceTestCase(unittest.TestCase):
                 ),
                 service_info=dict(
                     Spec=dict(
+                        Labels=dict(
+                            label='value',
+                        ),
                         TaskTemplate=dict(
                             ContainerSpec=dict(
+                                Labels=dict(
+                                    label='value',
+                                ),
                                 Mounts=[
                                     dict(
                                         Type='volume',
@@ -1628,6 +1648,8 @@ class ServiceTestCase(unittest.TestCase):
                     'replicas': '1',
                     'publish-rm': ['target'],
                     'mount-rm': ['/path'],
+                    'label-rm': ['label'],
+                    'container-label-rm': ['label'],
                     'service': 'service',
                 },
             ),
@@ -1638,12 +1660,22 @@ class ServiceTestCase(unittest.TestCase):
                     options=dict(
                         ports='source2:target2',
                         mounts='type=volume,destination=/path',
+                        labels='label=value',
+                        container_labels='label=value',
                     ),
                 ),
                 service_info=dict(
                     Spec=dict(
+                        Labels=dict(
+                            label='value',
+                            label2='value2',
+                        ),
                         TaskTemplate=dict(
                             ContainerSpec=dict(
+                                Labels=dict(
+                                    label='value',
+                                    label2='value2',
+                                ),
                                 Mounts=[
                                     dict(
                                         Type='volume',
@@ -1682,6 +1714,10 @@ class ServiceTestCase(unittest.TestCase):
                     'publish-add': ['source2:target2'],
                     'mount-rm': ['/path2'],
                     'mount-add': ['type=volume,destination=/path'],
+                    'label-rm': ['label2'],
+                    'label-add': ['label=value'],
+                    'container-label-rm': ['label2'],
+                    'container-label-add': ['label=value'],
                     'service': 'service',
                 },
             ),
@@ -1698,12 +1734,30 @@ class ServiceTestCase(unittest.TestCase):
                             'type=volume,destination=/path',
                             'type=volume,destination=/path2',
                         ],
+                        labels=[
+                            'label=value',
+                            'label2=value2',
+                        ],
+                        container_labels=[
+                            'label=value',
+                            'label2=value2',
+                        ],
                     ),
                 ),
                 service_info=dict(
                     Spec=dict(
+                        Labels=dict(
+                            label='value',
+                            label2='value2',
+                            label3='value3',
+                        ),
                         TaskTemplate=dict(
                             ContainerSpec=dict(
+                                Labels=dict(
+                                    label='value',
+                                    label2='value2',
+                                    label3='value3',
+                                ),
                                 Mounts=[
                                     dict(
                                         Type='volume',
@@ -1750,6 +1804,10 @@ class ServiceTestCase(unittest.TestCase):
                     'replicas': '1',
                     'publish-rm': ['target'],
                     'publish-add': ['source2:target2', 'source3:target3'],
+                    'label-rm': ['label3'],
+                    'label-add': ['label=value', 'label2=value2'],
+                    'container-label-rm': ['label3'],
+                    'container-label-add': ['label=value', 'label2=value2'],
                     'mount-rm': ['/path3'],
                     'mount-add': [
                         'type=volume,destination=/path',
