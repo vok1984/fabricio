@@ -41,9 +41,7 @@ class RemovableOption(Option):
             return None
         if not current_values:
             return None
-        new_values = self.get_add_values(service, service_attr) or []
-        if isinstance(new_values, six.string_types):
-            new_values = [new_values]
+        new_values = self.get_add_values(service, service_attr)
         return set(current_values).difference(new_values)
 
     def get_add_values(self, service, service_attr):
