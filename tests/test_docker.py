@@ -1546,12 +1546,13 @@ class ServiceTestCase(unittest.TestCase):
                     'service': 'service',
                 },
             ),
-            new_port=dict(
+            new_option_value=dict(
                 init_kwargs=dict(
                     name='service',
                     image='image:tag',
                     options=dict(
                         ports='source:target',
+                        mounts='type=volume,destination=/path',
                     ),
                 ),
                 service_info=dict(),
@@ -1560,10 +1561,11 @@ class ServiceTestCase(unittest.TestCase):
                     'image': 'image_id',
                     'replicas': '1',
                     'publish-add': ['source:target'],
+                    'mount-add': ['type=volume,destination=/path'],
                     'service': 'service',
                 },
             ),
-            new_ports=dict(
+            new_options_values=dict(
                 init_kwargs=dict(
                     name='service',
                     image='image:tag',
@@ -1571,6 +1573,10 @@ class ServiceTestCase(unittest.TestCase):
                         ports=[
                             'source:target',
                             'source2:target2',
+                        ],
+                        mounts=[
+                            'type=volume,destination=/path',
+                            'type=volume,destination=/path2',
                         ],
                     ),
                 ),
@@ -1580,16 +1586,31 @@ class ServiceTestCase(unittest.TestCase):
                     'image': 'image_id',
                     'replicas': '1',
                     'publish-add': ['source:target', 'source2:target2'],
+                    'mount-add': [
+                        'type=volume,destination=/path',
+                        'type=volume,destination=/path2',
+                    ],
                     'service': 'service',
                 },
             ),
-            remove_port=dict(
+            remove_option_value=dict(
                 init_kwargs=dict(
                     name='service',
                     image='image:tag',
                 ),
                 service_info=dict(
                     Spec=dict(
+                        TaskTemplate=dict(
+                            ContainerSpec=dict(
+                                Mounts=[
+                                    dict(
+                                        Type='volume',
+                                        Source='/source',
+                                        Target='/path',
+                                    ),
+                                ]
+                            ),
+                        ),
                         EndpointSpec=dict(
                             Ports=[
                                 dict(
@@ -1606,19 +1627,37 @@ class ServiceTestCase(unittest.TestCase):
                     'image': 'image_id',
                     'replicas': '1',
                     'publish-rm': ['target'],
+                    'mount-rm': ['/path'],
                     'service': 'service',
                 },
             ),
-            remove_single_port_from_two=dict(
+            remove_single_option_value_from_two=dict(
                 init_kwargs=dict(
                     name='service',
                     image='image:tag',
                     options=dict(
                         ports='source2:target2',
+                        mounts='type=volume,destination=/path',
                     ),
                 ),
                 service_info=dict(
                     Spec=dict(
+                        TaskTemplate=dict(
+                            ContainerSpec=dict(
+                                Mounts=[
+                                    dict(
+                                        Type='volume',
+                                        Source='/source',
+                                        Target='/path',
+                                    ),
+                                    dict(
+                                        Type='volume',
+                                        Source='/source2',
+                                        Target='/path2',
+                                    ),
+                                ]
+                            ),
+                        ),
                         EndpointSpec=dict(
                             Ports=[
                                 dict(
@@ -1641,10 +1680,12 @@ class ServiceTestCase(unittest.TestCase):
                     'replicas': '1',
                     'publish-rm': ['target'],
                     'publish-add': ['source2:target2'],
+                    'mount-rm': ['/path2'],
+                    'mount-add': ['type=volume,destination=/path'],
                     'service': 'service',
                 },
             ),
-            remove_single_port_from_three=dict(
+            remove_single_option_value_from_three=dict(
                 init_kwargs=dict(
                     name='service',
                     image='image:tag',
@@ -1653,150 +1694,6 @@ class ServiceTestCase(unittest.TestCase):
                             'source2:target2',
                             'source3:target3',
                         ],
-                    ),
-                ),
-                service_info=dict(
-                    Spec=dict(
-                        EndpointSpec=dict(
-                            Ports=[
-                                dict(
-                                    TargetPort='target',
-                                    Protocol='tcp',
-                                    PublishedPort='source',
-                                ),
-                                dict(
-                                    TargetPort='target2',
-                                    Protocol='tcp',
-                                    PublishedPort='source2',
-                                ),
-                                dict(
-                                    TargetPort='target3',
-                                    Protocol='tcp',
-                                    PublishedPort='source3',
-                                ),
-                            ],
-                        ),
-                    ),
-                ),
-                expected_args={
-                    'executable': ['docker', 'service', 'update'],
-                    'image': 'image_id',
-                    'replicas': '1',
-                    'publish-rm': ['target'],
-                    'publish-add': ['source2:target2', 'source3:target3'],
-                    'service': 'service',
-                },
-            ),
-            new_mount=dict(
-                init_kwargs=dict(
-                    name='service',
-                    image='image:tag',
-                    options=dict(
-                        mounts='type=volume,destination=/path',
-                    ),
-                ),
-                service_info=dict(),
-                expected_args={
-                    'executable': ['docker', 'service', 'update'],
-                    'image': 'image_id',
-                    'replicas': '1',
-                    'mount-add': ['type=volume,destination=/path'],
-                    'service': 'service',
-                },
-            ),
-            new_mounts=dict(
-                init_kwargs=dict(
-                    name='service',
-                    image='image:tag',
-                    options=dict(
-                        mounts=[
-                            'type=volume,destination=/path',
-                            'type=volume,destination=/path2',
-                        ],
-                    ),
-                ),
-                service_info=dict(),
-                expected_args={
-                    'executable': ['docker', 'service', 'update'],
-                    'image': 'image_id',
-                    'replicas': '1',
-                    'mount-add': [
-                        'type=volume,destination=/path',
-                        'type=volume,destination=/path2',
-                    ],
-                    'service': 'service',
-                },
-            ),
-            remove_mount=dict(
-                init_kwargs=dict(
-                    name='service',
-                    image='image:tag',
-                ),
-                service_info=dict(
-                    Spec=dict(
-                        TaskTemplate=dict(
-                            ContainerSpec=dict(
-                                Mounts=[
-                                    dict(
-                                        Type='volume',
-                                        Source='/source',
-                                        Target='/path',
-                                    ),
-                                ]
-                            ),
-                        ),
-                    ),
-                ),
-                expected_args={
-                    'executable': ['docker', 'service', 'update'],
-                    'image': 'image_id',
-                    'replicas': '1',
-                    'mount-rm': ['/path'],
-                    'service': 'service',
-                },
-            ),
-            remove_single_mount_from_two=dict(
-                init_kwargs=dict(
-                    name='service',
-                    image='image:tag',
-                    options=dict(
-                        mounts='type=volume,destination=/path',
-                    ),
-                ),
-                service_info=dict(
-                    Spec=dict(
-                        TaskTemplate=dict(
-                            ContainerSpec=dict(
-                                Mounts=[
-                                    dict(
-                                        Type='volume',
-                                        Source='/source',
-                                        Target='/path',
-                                    ),
-                                    dict(
-                                        Type='volume',
-                                        Source='/source2',
-                                        Target='/path2',
-                                    ),
-                                ]
-                            ),
-                        ),
-                    ),
-                ),
-                expected_args={
-                    'executable': ['docker', 'service', 'update'],
-                    'image': 'image_id',
-                    'replicas': '1',
-                    'mount-rm': ['/path2'],
-                    'mount-add': ['type=volume,destination=/path'],
-                    'service': 'service',
-                },
-            ),
-            remove_single_mount_from_three=dict(
-                init_kwargs=dict(
-                    name='service',
-                    image='image:tag',
-                    options=dict(
                         mounts=[
                             'type=volume,destination=/path',
                             'type=volume,destination=/path2',
@@ -1826,12 +1723,33 @@ class ServiceTestCase(unittest.TestCase):
                                 ]
                             ),
                         ),
+                        EndpointSpec=dict(
+                            Ports=[
+                                dict(
+                                    TargetPort='target',
+                                    Protocol='tcp',
+                                    PublishedPort='source',
+                                ),
+                                dict(
+                                    TargetPort='target2',
+                                    Protocol='tcp',
+                                    PublishedPort='source2',
+                                ),
+                                dict(
+                                    TargetPort='target3',
+                                    Protocol='tcp',
+                                    PublishedPort='source3',
+                                ),
+                            ],
+                        ),
                     ),
                 ),
                 expected_args={
                     'executable': ['docker', 'service', 'update'],
                     'image': 'image_id',
                     'replicas': '1',
+                    'publish-rm': ['target'],
+                    'publish-add': ['source2:target2', 'source3:target3'],
                     'mount-rm': ['/path3'],
                     'mount-add': [
                         'type=volume,destination=/path',
