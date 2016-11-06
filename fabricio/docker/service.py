@@ -90,6 +90,7 @@ class Mount(RemovableOption):
         def get_comparison_value(self):
             # fetch target path
             match = re.search(
+                # TODO is there any better way?
                 'destination=("[^"]*"|[^,]*|\'[^\']*\')',
                 self,
                 re.UNICODE,
