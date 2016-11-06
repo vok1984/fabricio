@@ -1,12 +1,24 @@
 import dummy_threading
+import json
 import sys
 
+from cached_property import cached_property
 from fabric import api as fab, colors
+from frozendict import frozendict
 
 import fabricio
 
 from .base import BaseService, Option, Attribute
 from .container import Container
+
+
+class RemovableOption(Option):
+
+    def get_remove_value(self, service):
+        pass  # TODO
+
+    def get_add_value(self, service):
+        pass  # TODO
 
 
 class Service(BaseService):
@@ -27,7 +39,7 @@ class Service(BaseService):
 
     replicas = Option(default=1)
 
-    mount = Option()
+    mount = RemovableOption()
 
     network = Option()
 
@@ -39,10 +51,12 @@ class Service(BaseService):
 
     @Option
     def env(self):
+        # env = service_spec.get('TaskTemplate', {}).get('ContainerSpec', {}).get('Env', [])  # noqa
         return self.sentinel and self.sentinel.env
 
-    @Option(name='publish')
+    @RemovableOption(name='publish')
     def ports(self):
+        # ports = service_spec.get('EndpointSpec', {}).get('Ports', [])
         return self.sentinel.ports
 
     @Option
@@ -76,8 +90,52 @@ class Service(BaseService):
             **attrs
         )
 
+    @cached_property
+    def _update_options(self):
+        options = {}
+        for cls in type(self).__mro__[::-1]:
+            for attr, value in vars(cls).items():
+                if isinstance(value, Option):
+                    name = value.name or attr
+                    if isinstance(value, RemovableOption):
+                        options[name + '-rm'] = value.get_remove_value
+                        options[name + '-add'] = value.get_add_value
+                    else:
+                        options[name] = value.__get__
+        return options
+
+    @property
+    def update_options(self):
+        return frozendict(
+            (
+                (option, callback(self))
+                for option, callback in self._update_options.items()
+            ),
+            image=self.image,
+            args=self.args,
+        )
+
     def _update(self):
+        try:
+            pass
+            # TODO find if service exists
+            # service_spec = json.loads(fabricio.run(
+            #     "docker service inspect --format '{{{{json .Spec}}}}' "
+            #     "{service}".format(
+            #         service=self,
+            #     ),
+            # ))
+        except RuntimeError:
+            self._create()
+        else:
+            fabricio.run('docker service update {options} {service}'.format(
+                options=self.update_options,
+                service=self,
+            ))
+
+    def _create(self):
         pass  # TODO
+        # TODO command += args
 
     def update(self, tag=None, registry=None, force=False):
         if not self.is_manager():

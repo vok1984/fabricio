@@ -28,7 +28,7 @@ class default_property(object):
             self.__doc__ = func.__doc__
         self.default = default
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance, owner=None):
         if instance is None:
             return self
         if self.func is None:
