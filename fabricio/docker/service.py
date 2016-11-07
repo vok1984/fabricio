@@ -88,12 +88,11 @@ class Mount(RemovableOption):
         def get_comparison_value(self):
             # fetch target path
             match = re.search(
-                # TODO is there any better way?
-                'destination=("[^"]*"|[^,]*|\'[^\']*\')',
+                'destination=(?P<q>[\'"]?)(?P<dst>.*?)(?P=q)(?:,|$)',
                 self,
                 re.UNICODE,
             )
-            return match and match.group(1).strip('"\'')
+            return match and match.group('dst')
 
     def get_current_values(self, service):
         return [
