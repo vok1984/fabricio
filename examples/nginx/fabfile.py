@@ -51,12 +51,22 @@ class AvailableVagrantHosts(object):
 
 
 nginx = tasks.DockerTasks(
-    service=docker.Service(
+    service=docker.Container(
         name='nginx',
         image='nginx:stable',
         options=dict(
             ports='80:80',
-            replicas=3,
+        ),
+    ),
+    hosts=AvailableVagrantHosts(),
+)
+
+my_nginx = tasks.BuildDockerTasks(
+    service=docker.Container(
+        name='my_nginx',
+        image='my_nginx',
+        options=dict(
+            ports='8000:80',
         ),
     ),
     hosts=AvailableVagrantHosts(),
