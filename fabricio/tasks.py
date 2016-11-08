@@ -244,7 +244,7 @@ class DockerTasks(Tasks):
     @skip_unknown_host
     def update(self, tag=None, force=False):
         """
-        start new Docker container if necessary
+        update the service / container
         """
         updated = self.service.update(
             tag=tag,

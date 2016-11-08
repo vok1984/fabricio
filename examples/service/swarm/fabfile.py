@@ -2,8 +2,7 @@ import re
 
 from cached_property import cached_property
 from fabric import api as fab
-from fabricio import tasks
-from fabricio.apps.db.postgres import StreamingReplicatedPostgresqlContainer
+from fabricio import tasks, docker
 
 
 class AvailableVagrantHosts(object):
@@ -51,21 +50,13 @@ class AvailableVagrantHosts(object):
         return hosts
 
 
-db = tasks.DockerTasks(
-    service=StreamingReplicatedPostgresqlContainer(
-        name='postgres',
-        image='postgres:9.6',
-        pg_conf='postgresql.conf',
-        pg_hba='pg_hba.conf',
-        pg_data='/data',
-        pg_recovery='recovery.conf',
-        pg_recovery_revert_enabled=True,
-        pg_recovery_master_promotion_enabled=True,
-        pg_recovery_wait_for_master_seconds=10,
+nginx = tasks.DockerTasks(
+    service=docker.Service(
+        name='nginx',
+        image='nginx:1.10',
         options=dict(
-            volumes='/data:/data',
-            env='PGDATA=/data',
-            ports='5432:5432',
+            ports='80:80',
+            replicas=3,
         ),
     ),
     hosts=AvailableVagrantHosts(),

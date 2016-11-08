@@ -159,7 +159,6 @@ class Image(object):
                 image=self,
                 command=command or '',
                 options=self.make_container_options(
-                    temporary=False,
                     name=name,
                     options=options,
                 ),
