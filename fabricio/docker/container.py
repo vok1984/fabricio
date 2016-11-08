@@ -21,11 +21,13 @@ class Container(BaseService):
 
     @Attribute
     def command(self):
-        warnings.warn(
-            "'cmd' is deprecated and will be removed in ver. 0.4, "
-            "use 'command' instead", RuntimeWarning,
-        )
-        return self.cmd
+        command = self.cmd
+        if command:
+            warnings.warn(
+                "'cmd' is deprecated and will be removed in ver. 0.4, "
+                "use 'command' instead", RuntimeWarning,
+            )
+        return command
 
     stop_timeout = Attribute(default=10)
 
