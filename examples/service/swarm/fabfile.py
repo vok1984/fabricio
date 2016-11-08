@@ -56,7 +56,7 @@ nginx = tasks.DockerTasks(
         image='nginx:stable',
         options=dict(
             ports='80:80',
-            replicas=3,
+            replicas=2,
         ),
     ),
     hosts=AvailableVagrantHosts(),

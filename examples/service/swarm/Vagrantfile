@@ -7,7 +7,6 @@ Vagrant.configure('2') do |config|
   %w(
       docker-swarm-1
       docker-swarm-2
-      docker-swarm-3
   ).each do |host_name|
     config.vm.define host_name do |host|
 
