@@ -10,7 +10,7 @@ Vagrant.configure('2') do |config|
   # end
 
   %w(
-      docker-nginx
+    docker-nginx
   ).each do |host_name|
     config.vm.define host_name do |host|
 

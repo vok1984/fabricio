@@ -5,9 +5,9 @@ Vagrant.configure('2') do |config|
   config.vm.network 'public_network'#, bridge: 'en0: Wi-Fi (AirPort)'
 
   %w(
-      docker-pg-1
-      docker-pg-2
-      docker-pg-3
+    docker-pg-1
+    docker-pg-2
+    docker-pg-3
   ).each do |host_name|
     config.vm.define host_name do |host|
 
