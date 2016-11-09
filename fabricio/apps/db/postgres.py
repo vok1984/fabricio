@@ -157,7 +157,7 @@ class PostgresqlContainer(docker.Container):
             'postgresql_conf is deprecated and will be removed in ver. 0.4, '
             'use pg_conf instead', DeprecationWarning,
         )
-        return NotImplemented
+        return 'postgresql.conf'
 
     @Attribute
     def pg_conf(self):
@@ -173,7 +173,7 @@ class PostgresqlContainer(docker.Container):
             'pg_hba_conf is deprecated and will be removed in ver. 0.4, '
             'use pg_hba instead', DeprecationWarning,
         )
-        return NotImplemented
+        return 'pg_hba.conf'
 
     @Attribute
     def pg_hba(self):
@@ -317,7 +317,7 @@ class PostgresqlContainer(docker.Container):
 
 class StreamingReplicatedPostgresqlContainer(PostgresqlContainer):
 
-    pg_recovery = Attribute()
+    pg_recovery = Attribute(default='recovery.conf')
 
     pg_recovery_primary_conninfo = Attribute(
         default="primary_conninfo = 'host={host} port={port} user={user}'"

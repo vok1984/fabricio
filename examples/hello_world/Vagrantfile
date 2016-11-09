@@ -2,12 +2,15 @@ Vagrant.configure('2') do |config|
 
   config.vm.box = 'ubuntu/trusty64'
 
-  config.vm.network 'public_network'#, bridge: 'en0: Wi-Fi (AirPort)'
+  # public ports
+  # {
+  #   8081 => 80,
+  # }.each do |host, guest|
+  #   config.vm.network :forwarded_port, guest: guest, host: host
+  # end
 
   %w(
-      docker-pg-1
-      docker-pg-2
-      docker-pg-3
+      docker-nginx
   ).each do |host_name|
     config.vm.define host_name do |host|
 
