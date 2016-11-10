@@ -32,13 +32,13 @@ class RemovableOption(Option):
 
     def get_current_values(self, service):
         info = _service_data['info'] = _service_data.get('info') or service.info
-        return eval(self.get_values(info))
+        try:
+            return eval(self.get_values(info))
+        except (KeyError, IndexError, AttributeError):
+            return []
 
     def get_remove_values(self, service, service_attr):
-        try:
-            current_values = self.get_current_values(service)
-        except KeyError:
-            return None
+        current_values = self.get_current_values(service)
         if not current_values:
             return None
         new_values = self.get_add_values(service, service_attr)
