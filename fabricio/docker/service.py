@@ -4,6 +4,7 @@ import json
 import re
 import sys
 
+import dpath
 import six
 
 from cached_property import cached_property
@@ -22,20 +23,19 @@ _service_data = {}
 
 class RemovableOption(Option):
 
-    get_values = '[]'.format
+    get_values = staticmethod(dpath.util.values)
+
+    path = None
 
     value_type = six.text_type
 
-    def __init__(self, func=None, get_values=None, **kwargs):
+    def __init__(self, func=None, path=None, **kwargs):
         super(RemovableOption, self).__init__(func=func, **kwargs)
-        self.get_values = get_values or self.get_values
+        self.path = path or self.path
 
     def get_current_values(self, service):
         info = _service_data['info'] = _service_data.get('info') or service.info
-        try:
-            return eval(self.get_values(info))
-        except (KeyError, IndexError, AttributeError):
-            return []
+        return self.get_values(info, self.path)
 
     def get_remove_values(self, service, service_attr):
         current_values = self.get_current_values(service)
@@ -55,16 +55,24 @@ class RemovableOption(Option):
 
 class Label(RemovableOption):
 
+    get_values = staticmethod(dpath.util.get)
+
     class value_type(utils.Item):
 
         def get_comparison_value(self):
             # fetch label key
             return self.split('=', 1)[0]
 
+    def get_current_values(self, service):
+        try:
+            return super(Label, self).get_current_values(service)
+        except KeyError:
+            return []
+
 
 class Port(RemovableOption):
 
-    get_values = '{0[Spec][EndpointSpec][Ports]!r}'.format
+    path = '/Spec/EndpointSpec/Ports/*/TargetPort'
 
     class value_type(utils.Item):
 
@@ -72,16 +80,10 @@ class Port(RemovableOption):
             # fetch target port
             return self.rsplit('/', 1)[0].rsplit(':', 1)[-1]
 
-    def get_current_values(self, service):
-        return [
-            value['TargetPort']
-            for value in super(Port, self).get_current_values(service)
-        ]
-
 
 class Mount(RemovableOption):
 
-    get_values = '{0[Spec][TaskTemplate][ContainerSpec][Mounts]!r}'.format
+    path = '/Spec/TaskTemplate/ContainerSpec/Mounts/*/Target'
 
     class value_type(utils.Item):
 
@@ -93,12 +95,6 @@ class Mount(RemovableOption):
                 re.UNICODE,
             )
             return match and match.group('dst')
-
-    def get_current_values(self, service):
-        return [
-            value['Target']
-            for value in super(Mount, self).get_current_values(service)
-        ]
 
 
 class Service(BaseService):
@@ -118,16 +114,16 @@ class Service(BaseService):
 
     args = Attribute()
 
-    labels = Label(name='label', get_values='{0[Spec][Labels]!r}'.format)
+    labels = Label(name='label', path='/Spec/Labels')
 
     container_labels = Label(
         name='container-label',
-        get_values='{0[Spec][TaskTemplate][ContainerSpec][Labels]!r}'.format,
+        path='/Spec/TaskTemplate/ContainerSpec/Labels',
     )
 
     constraints = RemovableOption(
         name='constraint',
-        get_values='{0[Spec][TaskTemplate][Placement][Constraints]!r}'.format,
+        path='/Spec/TaskTemplate/Placement/Constraints/*',
     )
 
     replicas = Option(default=1)
@@ -142,9 +138,7 @@ class Service(BaseService):
     def stop_timeout(self):
         return self.sentinel and self.sentinel.stop_timeout
 
-    @RemovableOption(
-        get_values='{0[Spec][TaskTemplate][ContainerSpec][Env]!r}'.format,
-    )
+    @RemovableOption(path='/Spec/TaskTemplate/ContainerSpec/Env/*')
     def env(self):
         return self.sentinel and self.sentinel.env
 
