@@ -1,54 +1,29 @@
-import re
+import fabricio
 
-from cached_property import cached_property
 from fabric import api as fab
 from fabricio import tasks, docker
+from fabricio.misc import AvailableVagrantHosts
+
+hosts = AvailableVagrantHosts(network_interface='eth1')
 
 
-class AvailableVagrantHosts(object):
-
-    def __iter__(self):
-        return iter(self.hosts)
-
-    @cached_property
-    def hosts(self):
-        keys = fab.env.key_filename = []
-        hosts = []
-        fab.local('vagrant up')
-        ssh_configs_data = fab.local('vagrant ssh-config', capture=True)
-        ssh_configs = map(
-            lambda config: dict(map(
-                lambda row: row.lstrip().split(' ', 1),
-                config.splitlines()
-            )),
-            re.split('(?m)\s*^$\s*', ssh_configs_data),
+@fab.task
+@fab.serial
+@fab.hosts(hosts)
+def swarm_init():
+    if swarm_init.worker_join_command is None:
+        fabricio.run(
+            'docker swarm init --advertise-addr {0}'.format(fab.env.host),
+            ignore_errors=True,
         )
-        for ssh_config in ssh_configs:
-            keys.append(ssh_config['IdentityFile'])
-            host_string = '{User}@{HostName}:{Port}'.format(**ssh_config)
-            with fab.settings(
-                host_string=host_string,
-                # see https://github.com/fabric/fabric/issues/1522
-                # disable_known_hosts=True,
-            ):
-                ip_command = (
-                    "ip addr show eth1 "
-                    "| grep inet "
-                    "| head -1 "
-                    "| awk '{ print $2 }'"
-                )
-                ip = ssh_config['Host'] = fab.run(
-                    ip_command,
-                    quiet=True,
-                ).split('/')[0]
-                if not ip:
-                    error_msg = 'Could not find IP address of ' + host_string
-                    raise ValueError(error_msg)
-            host = '{User}@{Host}'.format(**ssh_config)
-            fab.puts('Added host: ' + host)
-            hosts.append(host)
-        return hosts
+        join_token = fabricio.run('docker swarm join-token --quiet worker')
+        swarm_init.worker_join_command = (
+            'docker swarm join --token {join_token} {host}:2377'
+        ).format(join_token=join_token, host=fab.env.host)
+    else:
+        fabricio.run(swarm_init.worker_join_command)
 
+swarm_init.worker_join_command = None
 
 nginx = tasks.DockerTasks(
     service=docker.Service(
@@ -59,5 +34,5 @@ nginx = tasks.DockerTasks(
             replicas=2,
         ),
     ),
-    hosts=AvailableVagrantHosts(),
+    hosts=hosts,
 )
