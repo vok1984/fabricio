@@ -152,6 +152,7 @@ class Service(BaseService):
 
     def __init__(self, image=None, sentinel=None, options=None, **attrs):
         super(Service, self).__init__(options=options, **attrs)
+        sentinel = sentinel or self.sentinel
         if sentinel:
             sentinel_name = sentinel.name or self.name
             sentinel = sentinel.fork(name=sentinel_name, image=image)
