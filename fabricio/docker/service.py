@@ -18,8 +18,6 @@ from fabricio import utils
 from .base import BaseService, Option, Attribute
 from .container import Container
 
-_service_data = {}
-
 
 class RemovableOption(Option):
 
@@ -34,8 +32,7 @@ class RemovableOption(Option):
         self.path = path or self.path
 
     def get_current_values(self, service):
-        info = _service_data['info'] = _service_data.get('info') or service.info
-        return self.get_values(info, self.path)
+        return self.get_values(service.info, self.path)
 
     def get_remove_values(self, service, service_attr):
         current_values = self.get_current_values(service)
@@ -199,19 +196,16 @@ class Service(BaseService):
 
     @property
     def update_options(self):
-        try:
-            args = self.args
-            return frozendict(
-                (
-                    (option, callback(self))
-                    for option, callback in self._update_options.items()
-                ),
-                image=self.image,
-                args=args and '"{0}"'.format(args.replace('"', '\\"')),
-                **self._additional_options
-            )
-        finally:
-            _service_data.clear()
+        args = self.args
+        return frozendict(
+            (
+                (option, callback(self))
+                for option, callback in self._update_options.items()
+            ),
+            image=self.image,
+            args=args and '"{0}"'.format(args.replace('"', '\\"')),
+            **self._additional_options
+        )
 
     def _update(self):
         try:
@@ -248,6 +242,7 @@ class Service(BaseService):
             return False
         if self.is_leader():
             self._update()
+        del self.info  # reset 'info' cached_property after service update
         return True
 
     def revert(self):
@@ -287,7 +282,7 @@ class Service(BaseService):
         if self.is_leader():
             self.sentinel.restore(backup_name=backup_name)
 
-    @property
+    @cached_property
     def info(self):
         command = 'docker service inspect {service}'
         try:
