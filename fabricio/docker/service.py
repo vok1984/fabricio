@@ -24,7 +24,7 @@ class RemovableOption(Option):
 
     get_values = '[]'.format
 
-    new_value = six.text_type
+    value_type = six.text_type
 
     def __init__(self, func=None, get_values=None, **kwargs):
         super(RemovableOption, self).__init__(func=func, **kwargs)
@@ -50,12 +50,12 @@ class RemovableOption(Option):
             return []
         if isinstance(values, six.string_types):
             values = [values]
-        return map(self.new_value, values)
+        return map(self.value_type, values)
 
 
 class Label(RemovableOption):
 
-    class new_value(utils.Item):
+    class value_type(utils.Item):
 
         def get_comparison_value(self):
             # fetch label key
@@ -66,7 +66,7 @@ class Port(RemovableOption):
 
     get_values = '{0[Spec][EndpointSpec][Ports]!r}'.format
 
-    class new_value(utils.Item):
+    class value_type(utils.Item):
 
         def get_comparison_value(self):
             # fetch target port
@@ -83,12 +83,12 @@ class Mount(RemovableOption):
 
     get_values = '{0[Spec][TaskTemplate][ContainerSpec][Mounts]!r}'.format
 
-    class new_value(utils.Item):
+    class value_type(utils.Item):
 
         def get_comparison_value(self):
             # fetch target path
             match = re.search(
-                'destination=(?P<q>[\'"]?)(?P<dst>.*?)(?P=q)(?:,|$)',
+                'destination=(?P<quote>[\'"]?)(?P<dst>.*?)(?P=quote)(?:,|$)',
                 self,
                 re.UNICODE,
             )
