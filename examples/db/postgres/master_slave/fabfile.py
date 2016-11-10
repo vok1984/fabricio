@@ -14,5 +14,5 @@ db = tasks.DockerTasks(
             ports='5432:5432',
         ),
     ),
-    hosts=AvailableVagrantHosts(network_interface='eth1'),
+    hosts=AvailableVagrantHosts(guest_network_interface='eth1'),
 )

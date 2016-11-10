@@ -4,7 +4,7 @@ from fabric import api as fab
 from fabricio import tasks, docker
 from fabricio.misc import AvailableVagrantHosts
 
-hosts = AvailableVagrantHosts(network_interface='eth1')
+hosts = AvailableVagrantHosts(guest_network_interface='eth1')
 
 
 @fab.task

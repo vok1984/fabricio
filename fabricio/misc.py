@@ -11,8 +11,8 @@ class AvailableVagrantHosts(object):
     If provided network_interface then use it to fetch IP within guest machine.
     """
 
-    def __init__(self, network_interface=None):
-        self.guest_network_interface = network_interface
+    def __init__(self, guest_network_interface=None):
+        self.guest_network_interface = guest_network_interface
 
     def __iter__(self):
         return iter(self.hosts)
