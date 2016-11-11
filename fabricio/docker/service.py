@@ -285,7 +285,7 @@ class Service(BaseService):
 
     @cached_property
     def _cache_key(self):
-        return uuid.uuid4()
+        return uuid.uuid4().bytes
 
     def _reset_cache_key(self):
         try:

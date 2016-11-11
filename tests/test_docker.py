@@ -2,6 +2,8 @@ import mock
 import re
 import unittest2 as unittest
 
+from fabric import api as fab
+
 import fabricio
 
 from fabricio import docker
@@ -1953,3 +1955,24 @@ class ServiceTestCase(unittest.TestCase):
                     with mock.patch.object(fabricio, 'run', side_effect=sd):
                         service = docker.Service(**data['init_kwargs'])
                         service._update()
+
+    def test_info(self):
+        with fab.settings(fab.hide('everything')):
+            with mock.patch.object(
+                fab,
+                'run',
+                return_value=SucceededResult('[{"foo": "bar"}]'),
+            ) as run:
+                run.__name__ = 'mocked_run'
+                service = docker.Service(name='service')
+
+                self.assertDictEqual(service.info, dict(foo='bar'))
+                self.assertEqual(run.call_count, 1)
+                self.assertDictEqual(service.info, dict(foo='bar'))
+                self.assertEqual(run.call_count, 1)
+
+                service._reset_cache_key()
+                self.assertDictEqual(service.info, dict(foo='bar'))
+                self.assertEqual(run.call_count, 2)
+                self.assertDictEqual(service.info, dict(foo='bar'))
+                self.assertEqual(run.call_count, 2)
