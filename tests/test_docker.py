@@ -1622,7 +1622,7 @@ class ServiceTestCase(unittest.TestCase):
                         mounts='type=volume,destination=/path',
                         labels='label=value',
                         env='FOO=bar',
-                        constraints='"node.role == manager"',
+                        constraints='node.role == manager',
                         container_labels='label=value',
                         network='network',
                         restart_condition='on-failure',
@@ -1671,8 +1671,8 @@ class ServiceTestCase(unittest.TestCase):
                             'label2=value2',
                         ],
                         constraints=[
-                            '"node.role == manager"',
-                            "'node.role == worker'",
+                            'node.role == manager',
+                            'node.role == worker',
                         ],
                         env=[
                             'FOO=bar',
@@ -1688,12 +1688,12 @@ class ServiceTestCase(unittest.TestCase):
                     'publish-add': ['source:target', 'source2:target2'],
                     'mount-add': [
                         'type=volume,destination=/path',
-                        'type=volume,destination="/path2"',
+                        '"type=volume,destination=\\"/path2\\""',
                     ],
                     'label-add': ['label=value', 'label2=value2'],
                     'constraint-add': [
                         '"node.role == manager"',
-                        "'node.role == worker'",
+                        '"node.role == worker"',
                     ],
                     'env-add': ['FOO=bar', 'FOO2=bar2'],
                     'container-label-add': ['label=value', 'label2=value2'],
@@ -1728,7 +1728,7 @@ class ServiceTestCase(unittest.TestCase):
                             ),
                             Placement=dict(
                                 Constraints=[
-                                    '"node.role == manager"',
+                                    'node.role == manager',
                                 ],
                             ),
                         ),
@@ -1765,7 +1765,7 @@ class ServiceTestCase(unittest.TestCase):
                         mounts='type=volume,destination=/path',
                         labels='label=value',
                         env='FOO=bar',
-                        constraints='"node.role == manager"',
+                        constraints='node.role == manager',
                         container_labels='label=value',
                     ),
                 ),
@@ -1800,8 +1800,8 @@ class ServiceTestCase(unittest.TestCase):
                             ),
                             Placement=dict(
                                 Constraints=[
-                                    '"node.role == manager"',
-                                    "'node.role == worker'",
+                                    'node.role == manager',
+                                    'node.role == worker',
                                 ],
                             ),
                         ),
@@ -1833,7 +1833,7 @@ class ServiceTestCase(unittest.TestCase):
                     'label-add': ['label=value'],
                     'env-rm': ['FOO2=bar2'],
                     'env-add': ['FOO=bar'],
-                    'constraint-rm': ["'node.role == worker'"],
+                    'constraint-rm': ['"node.role == worker"'],
                     'constraint-add': ['"node.role == manager"'],
                     'container-label-rm': ['label2'],
                     'container-label-add': ['label=value'],
@@ -1862,8 +1862,8 @@ class ServiceTestCase(unittest.TestCase):
                             'FOO2=bar2',
                         ],
                         constraints=[
-                            '"node.role == manager"',
-                            "'node.role == worker'",
+                            'node.role == manager',
+                            'node.role == worker',
                         ],
                         container_labels=[
                             'label=value',
@@ -1910,8 +1910,8 @@ class ServiceTestCase(unittest.TestCase):
                             ),
                             Placement=dict(
                                 Constraints=[
-                                    '"node.role == manager"',
-                                    "'node.role == worker'",
+                                    'node.role == manager',
+                                    'node.role == worker',
                                     'constraint',
                                 ],
                             ),
@@ -1950,14 +1950,14 @@ class ServiceTestCase(unittest.TestCase):
                     'constraint-rm': ['constraint'],
                     'constraint-add': [
                         '"node.role == manager"',
-                        "'node.role == worker'",
+                        '"node.role == worker"',
                     ],
                     'container-label-rm': ['label3'],
                     'container-label-add': ['label=value', 'label2=value2'],
                     'mount-rm': ['/path3'],
                     'mount-add': [
                         'type=volume,destination=/path',
-                        'type=volume,destination="/path2"',
+                        '"type=volume,destination=\\"/path2\\""',
                     ],
                     'service': 'service',
                 },
