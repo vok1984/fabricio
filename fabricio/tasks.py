@@ -359,7 +359,7 @@ class PullDockerTasks(DockerTasks):
             quiet=False,
             use_cache=True,
         )
-        self.remove_obsolete_images()
+        self.delete_dangling_images()
 
     @fab.task(default=True, task_class=IgnoreHostsTask)
     def deploy(self, tag=None, force=False, migrate=True, backup=False):
@@ -372,11 +372,18 @@ class PullDockerTasks(DockerTasks):
             self, tag=tag, force=force, migrate=migrate, backup=backup)
 
     @staticmethod
-    def remove_obsolete_images():
+    def delete_dangling_images():
         fabricio.local(
-            'docker rmi $(docker images --filter "dangling=true" --quiet)',
-            ignore_errors=True,
+            'docker images --filter "dangling=true" --quiet '
+            '| xargs --no-run-if-empty docker rmi',
         )
+
+    def remove_obsolete_images(self):
+        warnings.warn(
+            'remove_obsolete_images() renamed to delete_dangling_images()',
+            DeprecationWarning,
+        )
+        self.delete_dangling_images()
 
 
 class BuildDockerTasks(PullDockerTasks):
@@ -403,7 +410,7 @@ class BuildDockerTasks(PullDockerTasks):
             quiet=False,
             use_cache=True,
         )
-        self.remove_obsolete_images()
+        self.delete_dangling_images()
 
     @fab.task(default=True, task_class=IgnoreHostsTask)
     def deploy(
