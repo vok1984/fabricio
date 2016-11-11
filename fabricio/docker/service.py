@@ -197,14 +197,13 @@ class Service(BaseService):
 
     @property
     def update_options(self):
-        args = self.args
         return frozendict(
             (
                 (option, callback(self))
                 for option, callback in self._update_options.items()
             ),
             image=self.image,
-            args=args and '"{0}"'.format(args.replace('"', '\\"')),
+            args=self.args,
             **self._additional_options
         )
 
