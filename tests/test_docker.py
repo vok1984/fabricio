@@ -1566,6 +1566,9 @@ class ImageTestCase(unittest.TestCase):
 
 class ServiceTestCase(unittest.TestCase):
 
+    def tearDown(self):
+        fabricio.run.cache.clear()
+
     @mock.patch.object(
         docker.Container,
         'info',
