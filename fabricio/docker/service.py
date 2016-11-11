@@ -3,6 +3,7 @@ import functools
 import json
 import re
 import sys
+import uuid
 
 import dpath
 import six
@@ -175,7 +176,7 @@ class Service(BaseService):
             **attrs
         )
 
-    @cached_property
+    @property
     def _update_options(self):
         options = {}
         for cls in type(self).__mro__[::-1]:
@@ -224,6 +225,7 @@ class Service(BaseService):
                 options=utils.Options(self.update_options),
                 service=self,
             ))
+        self._reset_cache_key()  # reset any cache after service update
 
     def _create(self):
         pass  # TODO
@@ -242,7 +244,6 @@ class Service(BaseService):
             return False
         if self.is_leader():
             self._update()
-        del self.info  # reset 'info' cached_property after service update
         return True
 
     def revert(self):
@@ -283,10 +284,24 @@ class Service(BaseService):
             self.sentinel.restore(backup_name=backup_name)
 
     @cached_property
+    def _cache_key(self):
+        return uuid.uuid4()
+
+    def _reset_cache_key(self):
+        try:
+            del self._cache_key
+        except AttributeError:
+            pass
+
+    @property
     def info(self):
         command = 'docker service inspect {service}'
         try:
-            info = fabricio.run(command.format(service=self))
+            info = fabricio.run(
+                command.format(service=self),
+                use_cache=True,
+                cache_key=self._cache_key,
+            )
         except RuntimeError:
             raise RuntimeError(
                 "Service '{service}' not found or host is "

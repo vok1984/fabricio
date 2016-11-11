@@ -36,6 +36,7 @@ def run(
     stdout=sys.stdout,
     stderr=sys.stderr,
     use_cache=False,
+    cache_key='',
     **kwargs
 ):
     if use_cache:
@@ -44,6 +45,7 @@ def run(
         md5 = hashlib.md5()
         md5.update(command)
         md5.update(fab.env.host or '')
+        md5.update(cache_key)
         cache_key = md5.digest()
         if cache_key in run.cache:
             return _command(fabric_method=from_cache, command=command, **kwargs)
