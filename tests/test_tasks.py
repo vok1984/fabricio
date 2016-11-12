@@ -559,6 +559,15 @@ class ProxyDockerTasksTestCase(unittest.TestCase):
     def tearDown(self):
         self.fab_settings.__exit__(None, None, None)
 
+    def test_pull_raises_error_if_no_ssh_tunnel_credentials_can_be_obtained(self):
+        tasks_list = tasks.ProxyDockerTasks(
+            container=docker.Container(name='name', image='image'),
+            ssh_tunnel_port=1234,
+            hosts=['host'],
+        )
+        with self.assertRaises(ValueError):
+            fab.execute(tasks_list.pull)
+
     @mock.patch.multiple(docker.Container, backup=mock.DEFAULT, migrate=mock.DEFAULT, update=mock.DEFAULT)
     @mock.patch.multiple(fabricio, run=mock.DEFAULT, local=mock.DEFAULT)
     @mock.patch.object(fab, 'remote_tunnel', return_value=mock.MagicMock())
