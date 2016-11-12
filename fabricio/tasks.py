@@ -382,6 +382,115 @@ class PullDockerTasks(DockerTasks):
         self.delete_dangling_images()
 
 
+class ProxyDockerTasks(DockerTasks):
+
+    def __init__(self, ssh_tunnel_port=None, **kwargs):
+        super(ProxyDockerTasks, self).__init__(**kwargs)
+        self.ssh_tunnel_port = ssh_tunnel_port
+
+    def need_prepare_and_push(self):
+        return self.registry is not None
+
+    @fab.task(task_class=IgnoreHostsTask)
+    def prepare(self, tag=None):
+        """
+        prepare Docker image
+        """
+        if not self.need_prepare_and_push():
+            return
+        fabricio.local(
+            'docker pull {image}'.format(image=self.image[tag]),
+            quiet=False,
+            use_cache=True,
+        )
+        self.delete_dangling_images()
+
+    @staticmethod
+    def delete_dangling_images():
+        fabricio.local(
+            'docker images --filter "dangling=true" --quiet '
+            '| xargs --no-run-if-empty docker rmi',
+        )
+
+    @fab.task(task_class=IgnoreHostsTask)
+    def push(self, tag=None):
+        """
+        push Docker image to registry
+        """
+        if not self.need_prepare_and_push():
+            return
+        tag_with_registry = str(self.image[self.registry:tag])
+        fabricio.local(
+            'docker tag {image} {tag}'.format(
+                image=self.image[tag],
+                tag=tag_with_registry,
+            ),
+            use_cache=True,
+        )
+        fabricio.local(
+            'docker push {tag}'.format(tag=tag_with_registry),
+            quiet=False,
+            use_cache=True,
+        )
+        fabricio.local(
+            'docker rmi {tag}'.format(tag=tag_with_registry),
+            use_cache=True,
+        )
+
+    def _pull(self, tag=None):
+        fabricio.run(
+            'docker pull {image}'.format(image=self.image[self.registry:tag]),
+            quiet=False,
+        )
+
+    @fab.task
+    @skip_unknown_host
+    def pull(self, tag=None):
+        """
+        pull Docker image from registry
+        """
+        if self.ssh_tunnel_port:
+            if self.registry:
+                local_port = self.registry.port
+                local_host = self.registry.host
+            elif self.image.registry:
+                local_port = self.image.registry.port
+                local_host = self.image.registry.host
+            else:
+                raise ValueError(
+                    'Either local host or local port for SSH tunnel '
+                    'can not be obtained'
+                )
+            with contextlib.closing(open(os.devnull, 'w')) as output:
+                with patch(sys, 'stdout', output):
+                    # forward sys.stdout to os.devnull to prevent
+                    # printing debug messages by fab.remote_tunnel
+
+                    with fab.remote_tunnel(
+                        remote_port=self.ssh_tunnel_port,
+                        local_port=local_port,
+                        local_host=local_host,
+                    ):
+                        self._pull(tag=tag)
+        else:
+            self._pull(tag=tag)
+
+    @fab.task(default=True, task_class=IgnoreHostsTask)
+    def deploy(self, tag=None, force=False, migrate=True, backup=False):
+        """
+        prepare -> push -> backup -> pull -> migrate -> update
+        """
+        fab.execute(self.prepare, tag=tag)
+        fab.execute(self.push, tag=tag)
+        DockerTasks.deploy(
+            self,
+            tag=tag,
+            force=force,
+            migrate=migrate,
+            backup=backup,
+        )
+
+
 class BuildDockerTasks(PullDockerTasks):
 
     def __init__(self, build_path='.', **kwargs):
