@@ -1,6 +1,11 @@
 Changelog
 =========
 
+Release 0.3.11
+--------------
+
+- Change: deprecated ``PullDockerTasks`` and ``BuildDockerTasks``, ``DockerTasks`` and ``ImageBuildDockerTasks`` can be used instead, accordingly
+
 Release 0.3.10
 --------------
 
