@@ -382,21 +382,96 @@ class PullDockerTasks(DockerTasks):
         self.delete_dangling_images()
 
 
-class ProxyDockerTasks(DockerTasks):
+class ProxyDockerTasks(Tasks):
 
-    def __init__(self, ssh_tunnel_port=None, **kwargs):
+    def __init__(
+        self,
+        container,
+        registry=None,
+        ssh_tunnel_port=None,
+        migrate_commands=False,
+        backup_commands=False,
+        **kwargs
+    ):
         super(ProxyDockerTasks, self).__init__(**kwargs)
+        self.container = container  # type: docker.Container
+        self.registry = registry and docker.Registry(registry)
         self.ssh_tunnel_port = ssh_tunnel_port
+        self.backup.use_task_objects = backup_commands
+        self.restore.use_task_objects = backup_commands
+        self.migrate.use_task_objects = migrate_commands
+        self.migrate_back.use_task_objects = migrate_commands
+        self.revert.use_task_objects = False  # disabled in favour of rollback
+        self._backup_done = set()
+        self._restore_done = set()
 
-    def need_prepare_and_push(self):
-        return self.registry is not None
+    @property
+    def image(self):
+        return self.container.image
+
+    @fab.task
+    @skip_unknown_host
+    def revert(self):
+        """
+        revert Docker container to previous version
+        """
+        self.container.revert()
+
+    @fab.task
+    @fab.serial
+    @skip_unknown_host
+    def migrate(self, tag=None):
+        """
+        apply migrations
+        """
+        self.container.migrate(tag=tag)
+
+    @fab.task
+    @fab.serial
+    @skip_unknown_host
+    def migrate_back(self):
+        """
+        remove previously applied migrations if any
+        """
+        self.container.migrate_back()
+
+    @fab.task(task_class=IgnoreHostsTask)
+    def rollback(self, migrate_back=True):
+        """
+        rollback Docker container to previous version
+        """
+        if strtobool(migrate_back):
+            fab.execute(self.migrate_back)
+        fab.execute(self.revert)
+
+    @fab.task
+    @fab.serial
+    @skip_unknown_host
+    def backup(self):
+        """
+        backup data
+        """
+        if fab.env.infrastructure not in self._backup_done:
+            self._backup_done.add(fab.env.infrastructure)
+            self.container.backup()
+
+    @fab.task
+    @fab.serial
+    @skip_unknown_host
+    def restore(self, backup_filename=None):
+        """
+        restore data
+        """
+        if fab.env.infrastructure not in self._restore_done:
+            self._restore_done.add(fab.env.infrastructure)
+            self.container.restore(backup_name=backup_filename)
 
     @fab.task(task_class=IgnoreHostsTask)
     def prepare(self, tag=None):
         """
         prepare Docker image
         """
-        if not self.need_prepare_and_push():
+        if self.registry is None:
             return
         fabricio.local(
             'docker pull {image}'.format(image=self.image[tag]),
@@ -412,12 +487,19 @@ class ProxyDockerTasks(DockerTasks):
             '| xargs --no-run-if-empty docker rmi',
         )
 
+    def push_image(self, tag=None):
+        fabricio.local(
+            'docker push {image}'.format(image=self.image[self.registry:tag]),
+            quiet=False,
+            use_cache=True,
+        )
+
     @fab.task(task_class=IgnoreHostsTask)
     def push(self, tag=None):
         """
         push Docker image to registry
         """
-        if not self.need_prepare_and_push():
+        if self.registry is None:
             return
         tag_with_registry = str(self.image[self.registry:tag])
         fabricio.local(
@@ -427,21 +509,24 @@ class ProxyDockerTasks(DockerTasks):
             ),
             use_cache=True,
         )
-        fabricio.local(
-            'docker push {tag}'.format(tag=tag_with_registry),
-            quiet=False,
-            use_cache=True,
-        )
+        self.push_image(tag=tag)
         fabricio.local(
             'docker rmi {tag}'.format(tag=tag_with_registry),
             use_cache=True,
         )
 
-    def _pull(self, tag=None):
+    def pull_image(self, tag=None, registry=None):
+        temporary_tag = str(self.image[registry:tag])
         fabricio.run(
-            'docker pull {image}'.format(image=self.image[self.registry:tag]),
+            'docker pull {image}'.format(image=temporary_tag),
             quiet=False,
         )
+        if registry and registry != self.image.registry:
+            fabricio.run('docker tag {image} {tag}'.format(
+                image=temporary_tag,
+                tag=self.image[tag],
+            ))
+            fabricio.run('docker rmi {image}'.format(image=temporary_tag))
 
     @fab.task
     @skip_unknown_host
@@ -471,9 +556,20 @@ class ProxyDockerTasks(DockerTasks):
                         local_port=local_port,
                         local_host=local_host,
                     ):
-                        self._pull(tag=tag)
+                        registry = 'localhost:{0}'.format(self.ssh_tunnel_port)
+                        self.pull_image(tag=tag, registry=registry)
         else:
-            self._pull(tag=tag)
+            self.pull_image(tag=tag, registry=self.registry)
+
+    @fab.task
+    @skip_unknown_host
+    def update(self, tag=None, force=False):
+        """
+        start new Docker container if necessary
+        """
+        updated = self.container.update(tag=tag, force=strtobool(force))
+        if not updated:
+            fabricio.log('No changes detected, update skipped.')
 
     @fab.task(default=True, task_class=IgnoreHostsTask)
     def deploy(self, tag=None, force=False, migrate=True, backup=False):
@@ -482,13 +578,12 @@ class ProxyDockerTasks(DockerTasks):
         """
         fab.execute(self.prepare, tag=tag)
         fab.execute(self.push, tag=tag)
-        DockerTasks.deploy(
-            self,
-            tag=tag,
-            force=force,
-            migrate=migrate,
-            backup=backup,
-        )
+        if strtobool(backup):
+            fab.execute(self.backup)
+        fab.execute(self.pull, tag=tag)
+        if strtobool(migrate):
+            fab.execute(self.migrate, tag=tag)
+        fab.execute(self.update, tag=tag, force=force)
 
 
 class BuildDockerTasks(PullDockerTasks):
