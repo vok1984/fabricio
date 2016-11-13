@@ -667,29 +667,3 @@ class BuildDockerTasks2(ProxyDockerTasks):
         push Docker image to registry
         """
         self.push_image(tag=tag)
-
-    @fab.task(default=True, task_class=IgnoreHostsTask)
-    def deploy(
-            self,
-            tag=None,
-            force=False,
-            migrate=True,
-            backup=False,
-            **kwargs
-    ):
-        """
-        prepare -> push -> backup -> pull -> migrate -> update
-        """
-        if kwargs.get('no_cache'):
-            raise RuntimeError(
-                'no_cache parameter does not exist anymore, use '
-                'prepare:no_cache=yes before deploy process if you want to '
-                'reset build cache'
-            )
-        ProxyDockerTasks.deploy(
-            self,
-            tag=tag,
-            force=force,
-            migrate=migrate,
-            backup=backup,
-        )
