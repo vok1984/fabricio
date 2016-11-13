@@ -143,7 +143,7 @@ class Infrastructure(Tasks):
 infrastructure = Infrastructure
 
 
-class DockerTasks(Tasks):
+class _DockerTasks(Tasks):
 
     def __init__(
         self,
@@ -153,7 +153,7 @@ class DockerTasks(Tasks):
         backup_commands=False,
         **kwargs
     ):
-        super(DockerTasks, self).__init__(**kwargs)
+        super(_DockerTasks, self).__init__(**kwargs)
         self.registry = registry and docker.Registry(registry)
         self.container = container  # type: docker.Container
         self.backup.use_task_objects = backup_commands
@@ -263,7 +263,7 @@ class DockerTasks(Tasks):
         fab.execute(self.update, tag=tag, force=force)
 
 
-class PullDockerTasks(DockerTasks):
+class PullDockerTasks(_DockerTasks):
 
     def __init__(
         self,
@@ -349,9 +349,9 @@ class PullDockerTasks(DockerTasks):
                         local_port=self.local_registry.port,
                         local_host=self.local_registry.host,
                     ):
-                        DockerTasks.pull(self, tag=tag)
+                        _DockerTasks.pull(self, tag=tag)
         else:
-            DockerTasks.pull(self, tag=tag)
+            _DockerTasks.pull(self, tag=tag)
 
     @fab.task(task_class=IgnoreHostsTask)
     def prepare(self, tag=None):
@@ -372,7 +372,7 @@ class PullDockerTasks(DockerTasks):
         """
         fab.execute(self.prepare, tag=tag)
         fab.execute(self.push, tag=tag)
-        DockerTasks.deploy(
+        _DockerTasks.deploy(
             self, tag=tag, force=force, migrate=migrate, backup=backup)
 
     @staticmethod
@@ -390,7 +390,7 @@ class PullDockerTasks(DockerTasks):
         self.delete_dangling_images()
 
 
-class ProxyDockerTasks(Tasks):
+class DockerTasks(Tasks):
 
     def __init__(
         self,
@@ -401,7 +401,7 @@ class ProxyDockerTasks(Tasks):
         backup_commands=False,
         **kwargs
     ):
-        super(ProxyDockerTasks, self).__init__(**kwargs)
+        super(DockerTasks, self).__init__(**kwargs)
         self.container = container  # type: docker.Container
         self.registry = registry and docker.Registry(registry)
         self.ssh_tunnel_port = ssh_tunnel_port
@@ -643,7 +643,7 @@ class BuildDockerTasks(PullDockerTasks):
         """
         fab.execute(self.prepare, tag=tag, no_cache=no_cache)
         fab.execute(self.push, tag=tag)
-        DockerTasks.deploy(
+        _DockerTasks.deploy(
             self,
             tag=tag,
             force=force,
@@ -652,7 +652,7 @@ class BuildDockerTasks(PullDockerTasks):
         )
 
 
-class ImageBuildDockerTasks(ProxyDockerTasks):
+class ImageBuildDockerTasks(DockerTasks):
 
     def __init__(self, build_path='.', **kwargs):
         super(ImageBuildDockerTasks, self).__init__(**kwargs)
