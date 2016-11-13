@@ -998,3 +998,270 @@ class BuildDockerTasksTestCase(unittest.TestCase):
                 tasks_list.deploy(**data['deploy_kwargs'])
                 self.assertListEqual(data['expected_calls'], deploy.mock_calls)
                 deploy.reset_mock()
+
+
+class BuildDockerTasks2TestCase(unittest.TestCase):
+
+    maxDiff = None
+
+    def setUp(self):
+        self.fab_settings = fab.settings(fab.hide('everything'))
+        self.fab_settings.__enter__()
+
+    def tearDown(self):
+        self.fab_settings.__exit__(None, None, None)
+
+    @mock.patch.multiple(docker.Container, backup=mock.DEFAULT, migrate=mock.DEFAULT, update=mock.DEFAULT)
+    @mock.patch.multiple(fabricio, run=mock.DEFAULT, local=mock.DEFAULT)
+    @mock.patch.object(fab, 'remote_tunnel', return_value=mock.MagicMock())
+    def test_deploy(self, remote_tunnel, run, local, backup, migrate, update):
+        cases = dict(
+            default=dict(
+                deploy_kwargs=dict(),
+                init_kwargs=dict(),
+                expected_calls=[
+                    mock.call.local('docker build --tag test:latest --pull .', quiet=False, use_cache=True),
+                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('docker push test:latest', quiet=False, use_cache=True),
+                    mock.call.run('docker pull test:latest', quiet=False),
+                    mock.call.migrate(tag=None),
+                    mock.call.update(force=False, tag=None),
+                ],
+                image_registry=None,
+            ),
+            custom_image_registry=dict(
+                deploy_kwargs=dict(),
+                init_kwargs=dict(),
+                expected_calls=[
+                    mock.call.local('docker build --tag registry:5000/test:latest --pull .', quiet=False, use_cache=True),
+                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('docker push registry:5000/test:latest', quiet=False, use_cache=True),
+                    mock.call.run('docker pull registry:5000/test:latest', quiet=False),
+                    mock.call.migrate(tag=None),
+                    mock.call.update(force=False, tag=None),
+                ],
+                image_registry='registry:5000',
+            ),
+            custom_image_registry_with_ssh_tunnel=dict(
+                deploy_kwargs=dict(),
+                init_kwargs=dict(ssh_tunnel_port=1234),
+                expected_calls=[
+                    mock.call.local('docker build --tag registry:5000/test:latest --pull .', quiet=False, use_cache=True),
+                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('docker push registry:5000/test:latest', quiet=False, use_cache=True),
+                    mock.call.remote_tunnel(remote_port=1234, local_port=5000, local_host='registry'),
+                    mock.call.run('docker pull localhost:1234/test:latest', quiet=False),
+                    mock.call.run('docker tag localhost:1234/test:latest registry:5000/test:latest'),
+                    mock.call.run('docker rmi localhost:1234/test:latest'),
+                    mock.call.migrate(tag=None),
+                    mock.call.update(force=False, tag=None),
+                ],
+                image_registry='registry:5000',
+            ),
+            custom_registry=dict(
+                deploy_kwargs=dict(),
+                init_kwargs=dict(registry='host:5000'),
+                expected_calls=[
+                    mock.call.local('docker build --tag host:5000/test:latest --pull .', quiet=False, use_cache=True),
+                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('docker push host:5000/test:latest', quiet=False, use_cache=True),
+                    mock.call.run('docker pull host:5000/test:latest', quiet=False),
+                    mock.call.run('docker tag host:5000/test:latest test:latest'),
+                    mock.call.run('docker rmi host:5000/test:latest'),
+                    mock.call.migrate(tag=None),
+                    mock.call.update(force=False, tag=None),
+                ],
+                image_registry=None,
+            ),
+            custom_registry_with_ssh_tunnel=dict(
+                deploy_kwargs=dict(),
+                init_kwargs=dict(registry='host:5000', ssh_tunnel_port=1234),
+                expected_calls=[
+                    mock.call.local('docker build --tag host:5000/test:latest --pull .', quiet=False, use_cache=True),
+                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('docker push host:5000/test:latest', quiet=False, use_cache=True),
+                    mock.call.remote_tunnel(remote_port=1234, local_port=5000, local_host='host'),
+                    mock.call.run('docker pull localhost:1234/test:latest', quiet=False),
+                    mock.call.run('docker tag localhost:1234/test:latest test:latest'),
+                    mock.call.run('docker rmi localhost:1234/test:latest'),
+                    mock.call.migrate(tag=None),
+                    mock.call.update(force=False, tag=None),
+                ],
+                image_registry=None,
+            ),
+            custom_registry_and_image_registry=dict(
+                deploy_kwargs=dict(),
+                init_kwargs=dict(registry='host:4000'),
+                expected_calls=[
+                    mock.call.local('docker build --tag host:4000/test:latest --pull .', quiet=False, use_cache=True),
+                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('docker push host:4000/test:latest', quiet=False, use_cache=True),
+                    mock.call.run('docker pull host:4000/test:latest', quiet=False),
+                    mock.call.run('docker tag host:4000/test:latest registry:5000/test:latest'),
+                    mock.call.run('docker rmi host:4000/test:latest'),
+                    mock.call.migrate(tag=None),
+                    mock.call.update(force=False, tag=None),
+                ],
+                image_registry='registry:5000',
+            ),
+            custom_registry_and_image_registry_with_ssh_tunnel=dict(
+                deploy_kwargs=dict(),
+                init_kwargs=dict(registry='host:4000', ssh_tunnel_port=1234),
+                expected_calls=[
+                    mock.call.local('docker build --tag host:4000/test:latest --pull .', quiet=False, use_cache=True),
+                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('docker push host:4000/test:latest', quiet=False, use_cache=True),
+                    mock.call.remote_tunnel(remote_port=1234, local_port=4000, local_host='host'),
+                    mock.call.run('docker pull localhost:1234/test:latest', quiet=False),
+                    mock.call.run('docker tag localhost:1234/test:latest registry:5000/test:latest'),
+                    mock.call.run('docker rmi localhost:1234/test:latest'),
+                    mock.call.migrate(tag=None),
+                    mock.call.update(force=False, tag=None),
+                ],
+                image_registry='registry:5000',
+            ),
+            forced=dict(
+                deploy_kwargs=dict(force='yes'),
+                init_kwargs=dict(),
+                expected_calls=[
+                    mock.call.local('docker build --tag test:latest --pull .', quiet=False, use_cache=True),
+                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('docker push test:latest', quiet=False, use_cache=True),
+                    mock.call.run('docker pull test:latest', quiet=False),
+                    mock.call.migrate(tag=None),
+                    mock.call.update(force=True, tag=None),
+                ],
+                image_registry=None,
+            ),
+            explicit_not_forced=dict(
+                deploy_kwargs=dict(force='no'),
+                init_kwargs=dict(),
+                expected_calls=[
+                    mock.call.local('docker build --tag test:latest --pull .', quiet=False, use_cache=True),
+                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('docker push test:latest', quiet=False, use_cache=True),
+                    mock.call.run('docker pull test:latest', quiet=False),
+                    mock.call.migrate(tag=None),
+                    mock.call.update(force=False, tag=None),
+                ],
+                image_registry=None,
+            ),
+            custom_build_path=dict(
+                deploy_kwargs=dict(),
+                init_kwargs=dict(build_path='foo'),
+                expected_calls=[
+                    mock.call.local('docker build --tag test:latest --pull foo', quiet=False, use_cache=True),
+                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('docker push test:latest', quiet=False, use_cache=True),
+                    mock.call.run('docker pull test:latest', quiet=False),
+                    mock.call.migrate(tag=None),
+                    mock.call.update(force=False, tag=None),
+                ],
+                image_registry=None,
+            ),
+            custom_tag=dict(
+                deploy_kwargs=dict(tag='tag'),
+                init_kwargs=dict(),
+                expected_calls=[
+                    mock.call.local('docker build --tag test:tag --pull .', quiet=False, use_cache=True),
+                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('docker push test:tag', quiet=False, use_cache=True),
+                    mock.call.run('docker pull test:tag', quiet=False),
+                    mock.call.migrate(tag='tag'),
+                    mock.call.update(force=False, tag='tag'),
+                ],
+                image_registry=None,
+            ),
+            backup_enabled=dict(
+                deploy_kwargs=dict(backup='yes'),
+                init_kwargs=dict(),
+                expected_calls=[
+                    mock.call.local('docker build --tag test:latest --pull .', quiet=False, use_cache=True),
+                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('docker push test:latest', quiet=False, use_cache=True),
+                    mock.call.backup(),
+                    mock.call.run('docker pull test:latest', quiet=False),
+                    mock.call.migrate(tag=None),
+                    mock.call.update(force=False, tag=None),
+                ],
+                image_registry=None,
+            ),
+            explicit_backup_disabled=dict(
+                deploy_kwargs=dict(backup='no'),
+                init_kwargs=dict(),
+                expected_calls=[
+                    mock.call.local('docker build --tag test:latest --pull .', quiet=False, use_cache=True),
+                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('docker push test:latest', quiet=False, use_cache=True),
+                    mock.call.run('docker pull test:latest', quiet=False),
+                    mock.call.migrate(tag=None),
+                    mock.call.update(force=False, tag=None),
+                ],
+                image_registry=None,
+            ),
+            skip_migrations=dict(
+                deploy_kwargs=dict(migrate='no'),
+                init_kwargs=dict(),
+                expected_calls=[
+                    mock.call.local('docker build --tag test:latest --pull .', quiet=False, use_cache=True),
+                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('docker push test:latest', quiet=False, use_cache=True),
+                    mock.call.run('docker pull test:latest', quiet=False),
+                    mock.call.update(force=False, tag=None),
+                ],
+                image_registry=None,
+            ),
+            explicit_migrate=dict(
+                deploy_kwargs=dict(migrate='yes'),
+                init_kwargs=dict(),
+                expected_calls=[
+                    mock.call.local('docker build --tag test:latest --pull .', quiet=False, use_cache=True),
+                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('docker push test:latest', quiet=False, use_cache=True),
+                    mock.call.run('docker pull test:latest', quiet=False),
+                    mock.call.migrate(tag=None),
+                    mock.call.update(force=False, tag=None),
+                ],
+                image_registry=None,
+            ),
+            complex=dict(
+                deploy_kwargs=dict(force=True, backup=True, migrate=False, tag='tag'),
+                init_kwargs=dict(registry='host:4000', ssh_tunnel_port=1234, build_path='foo'),
+                expected_calls=[
+                    mock.call.local('docker build --tag host:4000/test:tag --pull foo', quiet=False, use_cache=True),
+                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('docker push host:4000/test:tag', quiet=False, use_cache=True),
+                    mock.call.backup(),
+                    mock.call.remote_tunnel(remote_port=1234, local_port=4000, local_host='host'),
+                    mock.call.run('docker pull localhost:1234/test:tag', quiet=False),
+                    mock.call.run('docker tag localhost:1234/test:tag registry:5000/test:tag'),
+                    mock.call.run('docker rmi localhost:1234/test:tag'),
+                    mock.call.update(force=True, tag='tag'),
+                ],
+                image_registry='registry:5000',
+            ),
+        )
+        deploy = mock.Mock()
+        deploy.attach_mock(backup, 'backup')
+        deploy.attach_mock(migrate, 'migrate')
+        deploy.attach_mock(update, 'update')
+        deploy.attach_mock(run, 'run')
+        deploy.attach_mock(local, 'local')
+        deploy.attach_mock(remote_tunnel, 'remote_tunnel')
+        update.return_value = False
+        for case, data in cases.items():
+            with self.subTest(case=case):
+                deploy.reset_mock()
+                tasks_list = tasks.BuildDockerTasks2(
+                    container=docker.Container(
+                        name='name',
+                        image=docker.Image('test', registry=data['image_registry']),
+                    ),
+                    hosts=['host'],
+                    **data['init_kwargs']
+                )
+                tasks_list.deploy(**data['deploy_kwargs'])
+                self.assertListEqual(data['expected_calls'], deploy.mock_calls)
+
+    def test_prepare_no_cache(self):
+        pass  # TODO

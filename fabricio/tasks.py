@@ -633,3 +633,63 @@ class BuildDockerTasks(PullDockerTasks):
             migrate=migrate,
             backup=backup,
         )
+
+
+class BuildDockerTasks2(ProxyDockerTasks):
+
+    def __init__(self, build_path='.', **kwargs):
+        super(BuildDockerTasks2, self).__init__(**kwargs)
+        self.build_path = build_path
+
+    @fab.task(task_class=IgnoreHostsTask)
+    def prepare(self, tag=None, no_cache=False):
+        """
+        prepare Docker image
+        """
+        options = Options([
+            ('tag', str(self.image[self.registry:tag])),
+            ('no-cache', strtobool(no_cache)),
+            ('pull', True),
+        ])
+        fabricio.local(
+            'docker build {options} {build_path}'.format(
+                build_path=self.build_path,
+                options=options,
+            ),
+            quiet=False,
+            use_cache=True,
+        )
+        self.delete_dangling_images()
+
+    @fab.task(task_class=IgnoreHostsTask)
+    def push(self, tag=None):
+        """
+        push Docker image to registry
+        """
+        self.push_image(tag=tag)
+
+    @fab.task(default=True, task_class=IgnoreHostsTask)
+    def deploy(
+            self,
+            tag=None,
+            force=False,
+            migrate=True,
+            backup=False,
+            **kwargs
+    ):
+        """
+        prepare -> push -> backup -> pull -> migrate -> update
+        """
+        if kwargs.get('no_cache'):
+            raise RuntimeError(
+                'no_cache parameter does not exist anymore, use '
+                'prepare:no_cache=yes before deploy process if you want to '
+                'reset build cache'
+            )
+        ProxyDockerTasks.deploy(
+            self,
+            tag=tag,
+            force=force,
+            migrate=migrate,
+            backup=backup,
+        )
