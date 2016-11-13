@@ -272,6 +272,14 @@ class PullDockerTasks(DockerTasks):
         use_ssh_tunnel=True,
         **kwargs
     ):
+        warnings.warn(
+            'PullDockerTasks is deprecated and will be removed in v0.4, '
+            'use DockerTasks instead', DeprecationWarning,
+        )
+        warnings.warn(
+            'PullDockerTasks is deprecated and will be removed in v0.4, '
+            'use DockerTasks instead', category=RuntimeWarning, stacklevel=2,
+        )
         super(PullDockerTasks, self).__init__(registry=registry, **kwargs)
         self.local_registry = docker.Registry(local_registry)
         self.use_ssh_tunnel = use_ssh_tunnel
@@ -589,6 +597,15 @@ class ProxyDockerTasks(Tasks):
 class BuildDockerTasks(PullDockerTasks):
 
     def __init__(self, build_path='.', **kwargs):
+        warnings.warn(
+            'BuildDockerTasks is deprecated and will be removed in v0.4, '
+            'use ImageBuildDockerTasks instead', DeprecationWarning,
+        )
+        warnings.warn(
+            'BuildDockerTasks is deprecated and will be removed in v0.4, '
+            'use ImageBuildDockerTasks instead',
+            category=RuntimeWarning, stacklevel=2,
+        )
         super(BuildDockerTasks, self).__init__(**kwargs)
         self.build_path = build_path
 
