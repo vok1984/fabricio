@@ -1000,7 +1000,7 @@ class BuildDockerTasksTestCase(unittest.TestCase):
                 deploy.reset_mock()
 
 
-class BuildDockerTasks2TestCase(unittest.TestCase):
+class ImageBuildDockerTasksTestCase(unittest.TestCase):
 
     maxDiff = None
 
@@ -1252,7 +1252,7 @@ class BuildDockerTasks2TestCase(unittest.TestCase):
         for case, data in cases.items():
             with self.subTest(case=case):
                 deploy.reset_mock()
-                tasks_list = tasks.BuildDockerTasks2(
+                tasks_list = tasks.ImageBuildDockerTasks(
                     container=docker.Container(
                         name='name',
                         image=docker.Image('test', registry=data['image_registry']),

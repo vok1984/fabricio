@@ -635,10 +635,10 @@ class BuildDockerTasks(PullDockerTasks):
         )
 
 
-class BuildDockerTasks2(ProxyDockerTasks):
+class ImageBuildDockerTasks(ProxyDockerTasks):
 
     def __init__(self, build_path='.', **kwargs):
-        super(BuildDockerTasks2, self).__init__(**kwargs)
+        super(ImageBuildDockerTasks, self).__init__(**kwargs)
         self.build_path = build_path
 
     @fab.task(task_class=IgnoreHostsTask)
