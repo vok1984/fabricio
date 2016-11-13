@@ -1157,4 +1157,35 @@ class ImageBuildDockerTasksTestCase(unittest.TestCase):
                 self.assertListEqual(data['expected_calls'], deploy.mock_calls)
 
     def test_prepare_no_cache(self):
-        pass  # TODO
+        cases = dict(
+            default=dict(
+                kwargs=dict(),
+                expected_calls=[
+                    mock.call('docker build --tag image:latest --pull .', quiet=False, use_cache=True),
+                    mock.call('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                ]
+            ),
+            explicit_cache=dict(
+                kwargs=dict(no_cache='no'),
+                expected_calls=[
+                    mock.call('docker build --tag image:latest --pull .', quiet=False, use_cache=True),
+                    mock.call('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                ]
+            ),
+            no_cache=dict(
+                kwargs=dict(no_cache='yes'),
+                expected_calls=[
+                    mock.call('docker build --tag image:latest --no-cache --pull .', quiet=False, use_cache=True),
+                    mock.call('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                ]
+            ),
+        )
+        for case, data in cases.items():
+            with self.subTest(case=case):
+                with mock.patch.object(fabricio, 'local') as local:
+                    tasks_list = tasks.ImageBuildDockerTasks(
+                        container=docker.Container(name='name', image='image'),
+                        hosts=['host'],
+                    )
+                    fab.execute(tasks_list.prepare, **data['kwargs'])
+                    self.assertListEqual(local.mock_calls, data['expected_calls'])
