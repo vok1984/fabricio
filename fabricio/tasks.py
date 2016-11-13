@@ -410,6 +410,8 @@ class DockerTasks(Tasks):
         self.migrate.use_task_objects = migrate_commands
         self.migrate_back.use_task_objects = migrate_commands
         self.revert.use_task_objects = False  # disabled in favour of rollback
+        self.prepare.use_task_objects = registry is not None
+        self.push.use_task_objects = registry is not None
         self._backup_done = set()
         self._restore_done = set()
 
@@ -657,6 +659,8 @@ class ImageBuildDockerTasks(DockerTasks):
     def __init__(self, build_path='.', **kwargs):
         super(ImageBuildDockerTasks, self).__init__(**kwargs)
         self.build_path = build_path
+        self.prepare.use_task_objects = True
+        self.push.use_task_objects = True
 
     @fab.task(task_class=IgnoreHostsTask)
     def prepare(self, tag=None, no_cache=False):
