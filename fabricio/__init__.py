@@ -40,15 +40,13 @@ def run(
     **kwargs
 ):
     if use_cache:
-        def from_cache(*args, **kwargs):
-            return run.cache[cache_key]
         md5 = hashlib.md5()
         md5.update(command)
         md5.update(fab.env.host or '')
         md5.update(cache_key)
         cache_key = md5.digest()
         if cache_key in run.cache:
-            return _command(fabric_method=from_cache, command=command, **kwargs)
+            return run.cache[cache_key]
     fabric_method = sudo and fab.sudo or fab.run
     result = _command(
         fabric_method=fabric_method,
@@ -65,13 +63,11 @@ run.cache = {}
 
 def local(command, use_cache=False, **kwargs):
     if use_cache:
-        def from_cache(*args, **kwargs):
-            return local.cache[cache_key]
         md5 = hashlib.md5()
         md5.update(command)
         cache_key = md5.digest()
         if cache_key in local.cache:
-            return _command(fabric_method=from_cache, command=command, **kwargs)
+            return local.cache[cache_key]
     result = _command(
         fabric_method=fab.local,
         command=command,
