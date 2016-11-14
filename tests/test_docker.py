@@ -1186,7 +1186,7 @@ class ImageTestCase(unittest.TestCase):
                 ),
                 expected_name='image',
                 expected_tag='latest',
-                expected_registry='',
+                expected_registry=None,
                 expected_str='image:latest',
             ),
             with_tag=dict(
@@ -1196,7 +1196,7 @@ class ImageTestCase(unittest.TestCase):
                 ),
                 expected_name='image',
                 expected_tag='tag',
-                expected_registry='',
+                expected_registry=None,
                 expected_str='image:tag',
             ),
             with_registry=dict(
@@ -1237,7 +1237,7 @@ class ImageTestCase(unittest.TestCase):
                 ),
                 expected_name='image',
                 expected_tag='tag',
-                expected_registry='',
+                expected_registry=None,
                 expected_str='image:tag',
             ),
             single_arg_with_registry=dict(
@@ -1265,7 +1265,7 @@ class ImageTestCase(unittest.TestCase):
                 ),
                 expected_name='image',
                 expected_tag='foo',
-                expected_registry='',
+                expected_registry=None,
                 expected_str='image:foo',
             ),
             forced_with_registry=dict(
@@ -1472,13 +1472,13 @@ class ImageTestCase(unittest.TestCase):
             name=dict(
                 image='image',
                 expected_name='image',
-                expected_registry='',
+                expected_registry=None,
                 expected_tag='latest',
             ),
             name_and_tag=dict(
                 image='image:tag',
                 expected_name='image',
-                expected_registry='',
+                expected_registry=None,
                 expected_tag='tag',
             ),
             name_and_registry=dict(
