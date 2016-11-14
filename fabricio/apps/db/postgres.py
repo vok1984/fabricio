@@ -215,7 +215,7 @@ class PostgresqlContainer(docker.Container):
         old_content = old_file.getvalue()
         need_update = content != old_content
         if need_update:
-            fabricio.move(
+            fabricio.move_file(
                 path_from=path,
                 path_to=path + '.backup',
                 sudo=True,
@@ -280,11 +280,11 @@ class PostgresqlContainer(docker.Container):
         if not main_config_updated:
             # remove main config backup to prevent reverting to old version
             main_conf_backup = main_conf + '.backup'
-            fabricio.remove(main_conf_backup, ignore_errors=True, sudo=True)
+            fabricio.remove_file(main_conf_backup, ignore_errors=True, sudo=True)
         if not hba_config_updated:
             # remove pg_hba config backup to prevent reverting to old version
             hba_conf_backup = hba_conf + '.backup'
-            fabricio.remove(hba_conf_backup, ignore_errors=True, sudo=True)
+            fabricio.remove_file(hba_conf_backup, ignore_errors=True, sudo=True)
         return True
 
     def revert(self):
@@ -292,13 +292,13 @@ class PostgresqlContainer(docker.Container):
         main_conf_backup = main_conf + '.backup'
         hba_conf = os.path.join(self.pg_data, 'pg_hba.conf')
         hba_conf_backup = hba_conf + '.backup'
-        main_config_reverted = fabricio.move(
+        main_config_reverted = fabricio.move_file(
             path_from=main_conf_backup,
             path_to=main_conf,
             ignore_errors=True,
             sudo=True,
         ).succeeded
-        hba_config_reverted = fabricio.move(
+        hba_config_reverted = fabricio.move_file(
             path_from=hba_conf_backup,
             path_to=hba_conf,
             ignore_errors=True,
@@ -414,7 +414,7 @@ class StreamingReplicatedPostgresqlContainer(PostgresqlContainer):
             self.master_lock.acquire()
             if not self.master_obtained.is_set():
                 if db_exists:
-                    fabricio.move(
+                    fabricio.move_file(
                         path_from=recovery_conf_file,
                         path_to=recovery_conf_file + '.backup',
                         sudo=True,

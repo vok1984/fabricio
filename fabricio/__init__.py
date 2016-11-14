@@ -1,5 +1,6 @@
 import hashlib
 import sys
+import warnings
 
 from fabric import colors, api as fab
 
@@ -84,7 +85,7 @@ def log(message, color=colors.yellow, output=sys.stdout):
         fab.puts(color(message))
 
 
-def move(path_from, path_to, sudo=False, ignore_errors=False):
+def move_file(path_from, path_to, sudo=False, ignore_errors=False):
     return run(
         'mv {path_from} {path_to}'.format(
             path_from=path_from,
@@ -95,7 +96,7 @@ def move(path_from, path_to, sudo=False, ignore_errors=False):
     )
 
 
-def remove(path, sudo=False, force=True, ignore_errors=False):
+def remove_file(path, sudo=False, force=True, ignore_errors=False):
     return run(
         'rm {force}{path}'.format(
             force=force and '-f ' or '',
@@ -104,3 +105,19 @@ def remove(path, sudo=False, force=True, ignore_errors=False):
         sudo=sudo,
         ignore_errors=ignore_errors,
     )
+
+
+def move(*args, **kwargs):
+    warnings.warn(
+        "'move' is deprecated and will be removed in v0.4, "
+        "use 'move_file' instead", DeprecationWarning,
+    )
+    return move_file(*args, **kwargs)
+
+
+def remove(*args, **kwargs):
+    warnings.warn(
+        "'remove' is deprecated and will be removed in v0.4, "
+        "use 'remove_file' instead", DeprecationWarning,
+    )
+    return remove_file(*args, **kwargs)
