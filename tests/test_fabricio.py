@@ -15,8 +15,6 @@ class FabricioTestCase(unittest.TestCase):
         self.fab_settings = fab.settings(fab.hide('everything'))
         self.fab_settings.__enter__()
         fab.env.infrastructure = None
-        fabricio.run.cache.clear()
-        fabricio.local.cache.clear()
 
     def tearDown(self):
         self.fab_settings.__exit__(None, None, None)
