@@ -398,15 +398,22 @@ class DockerTasks(Tasks):
 
     def __init__(
         self,
-        container,
+        service=None,
+        container=None,  # deprecated
         registry=None,
         ssh_tunnel_port=None,
         migrate_commands=False,
         backup_commands=False,
         **kwargs
     ):
+        if container:
+            warnings.warn(
+                "'container' argument is deprecated and will be removed "
+                "in v0.4, use 'service' instead",
+                category=RuntimeWarning, stacklevel=2,
+            )
         super(DockerTasks, self).__init__(**kwargs)
-        self.container = container  # type: docker.Container
+        self.service = service or container
         self.registry = registry and docker.Registry(registry)
         self.ssh_tunnel_port = ssh_tunnel_port
         self.backup.use_task_objects = backup_commands
@@ -421,7 +428,7 @@ class DockerTasks(Tasks):
 
     @property
     def image(self):
-        return self.container.image
+        return self.service.image
 
     @fab.task
     @skip_unknown_host
@@ -429,7 +436,7 @@ class DockerTasks(Tasks):
         """
         revert Docker container to previous version
         """
-        self.container.revert()
+        self.service.revert()
 
     @fab.task
     @fab.serial
@@ -438,7 +445,7 @@ class DockerTasks(Tasks):
         """
         apply migrations
         """
-        self.container.migrate(tag=tag)
+        self.service.migrate(tag=tag)
 
     @fab.task
     @fab.serial
@@ -447,7 +454,7 @@ class DockerTasks(Tasks):
         """
         remove previously applied migrations if any
         """
-        self.container.migrate_back()
+        self.service.migrate_back()
 
     @fab.task(task_class=IgnoreHostsTask)
     def rollback(self, migrate_back=True):
@@ -467,7 +474,7 @@ class DockerTasks(Tasks):
         """
         if fab.env.infrastructure not in self._backup_done:
             self._backup_done.add(fab.env.infrastructure)
-            self.container.backup()
+            self.service.backup()
 
     @fab.task
     @fab.serial
@@ -478,7 +485,7 @@ class DockerTasks(Tasks):
         """
         if fab.env.infrastructure not in self._restore_done:
             self._restore_done.add(fab.env.infrastructure)
-            self.container.restore(backup_name=backup_filename)
+            self.service.restore(backup_name=backup_filename)
 
     @fab.task(task_class=IgnoreHostsTask)
     def prepare(self, tag=None):
@@ -581,7 +588,7 @@ class DockerTasks(Tasks):
         """
         start new Docker container if necessary
         """
-        updated = self.container.update(tag=tag, force=strtobool(force))
+        updated = self.service.update(tag=tag, force=strtobool(force))
         if not updated:
             fabricio.log('No changes detected, update skipped.')
 

@@ -152,27 +152,27 @@ class DockerTasksTestCase(unittest.TestCase):
     def test_commands_list(self):
         cases = dict(
             default=dict(
-                init_kwargs=dict(service='container'),
+                init_kwargs=dict(service='service'),
                 expected_commands_list=['pull', 'rollback', 'update', 'deploy'],
                 unexpected_commands_list=['revert', 'migrate', 'migrate_back', 'backup', 'restore'],
             ),
             prepare_tasks=dict(
-                init_kwargs=dict(container='container', registry='registry'),
+                init_kwargs=dict(service='service', registry='registry'),
                 expected_commands_list=['pull', 'rollback', 'update', 'deploy', 'prepare', 'push'],
                 unexpected_commands_list=['revert', 'migrate', 'migrate_back', 'backup', 'restore'],
             ),
             migrate_tasks=dict(
-                init_kwargs=dict(service='container', migrate_commands=True),
+                init_kwargs=dict(service='service', migrate_commands=True),
                 expected_commands_list=['pull', 'rollback', 'update', 'deploy', 'migrate', 'migrate_back'],
                 unexpected_commands_list=['revert', 'backup', 'restore', 'prepare', 'push'],
             ),
             backup_tasks=dict(
-                init_kwargs=dict(service='container', backup_commands=True),
+                init_kwargs=dict(service='service', backup_commands=True),
                 expected_commands_list=['pull', 'rollback', 'update', 'deploy', 'backup', 'restore'],
                 unexpected_commands_list=['revert', 'migrate', 'migrate_back', 'prepare', 'push'],
             ),
             all_tasks=dict(
-                init_kwargs=dict(service='container', backup_commands=True, migrate_commands=True, registry='registry'),
+                init_kwargs=dict(service='service', backup_commands=True, migrate_commands=True, registry='registry'),
                 expected_commands_list=['pull', 'rollback', 'update', 'deploy', 'backup', 'restore', 'migrate', 'migrate_back', 'prepare', 'push'],
                 unexpected_commands_list=['revert'],
             ),
@@ -210,7 +210,7 @@ class DockerTasksTestCase(unittest.TestCase):
 
     def test_pull_raises_error_if_no_ssh_tunnel_credentials_can_be_obtained(self):
         tasks_list = tasks.DockerTasks(
-            container=docker.Container(name='name', image='image'),
+            service=docker.Container(name='name', image='image'),
             ssh_tunnel_port=1234,
             hosts=['host'],
         )
@@ -1159,7 +1159,7 @@ class ImageBuildDockerTasksTestCase(unittest.TestCase):
             with self.subTest(case=case):
                 deploy.reset_mock()
                 tasks_list = tasks.ImageBuildDockerTasks(
-                    container=docker.Container(
+                    service=docker.Container(
                         name='name',
                         image=docker.Image('test', registry=data['image_registry']),
                     ),
@@ -1197,14 +1197,14 @@ class ImageBuildDockerTasksTestCase(unittest.TestCase):
             with self.subTest(case=case):
                 with mock.patch.object(fabricio, 'local') as local:
                     tasks_list = tasks.ImageBuildDockerTasks(
-                        container=docker.Container(name='name', image='image'),
+                        service=docker.Container(name='name', image='image'),
                         hosts=['host'],
                     )
                     fab.execute(tasks_list.prepare, **data['kwargs'])
                     self.assertListEqual(local.mock_calls, data['expected_calls'])
 
     def test_prepare_and_push_are_in_the_commands_list_by_default(self):
-        init_kwargs = dict(container='container')
+        init_kwargs = dict(service='service')
         expected_commands_list = ['pull', 'rollback', 'update', 'deploy', 'prepare', 'push']
         tasks_list = tasks.ImageBuildDockerTasks(**init_kwargs)
         docstring, new_style, classic, default = load_tasks_from_module(tasks_list)

@@ -1,7 +1,7 @@
 from fabricio import tasks, docker
 from fabricio.misc import AvailableVagrantHosts
 
-my_nginx = tasks.BuildDockerTasks(
+my_nginx = tasks.ImageBuildDockerTasks(
     service=docker.Container(
         name='my_nginx',
         image='my_nginx',
@@ -10,4 +10,5 @@ my_nginx = tasks.BuildDockerTasks(
         ),
     ),
     hosts=AvailableVagrantHosts(),
+    registry='localhost:5000',
 )
