@@ -8,7 +8,7 @@ class AvailableVagrantHosts(object):
     """
     Returns list of IP addresses of available vagrant VMs in the current dir.
 
-    If provided network_interface then use it to fetch IP within guest machine.
+    If provided guest_network_interface then it will be used to obtain the IP.
     """
 
     def __init__(self, guest_network_interface=None):
