@@ -11,4 +11,5 @@ my_nginx = tasks.ImageBuildDockerTasks(
     ),
     hosts=AvailableVagrantHosts(),
     registry='localhost:5000',
+    ssh_tunnel_port=5000,
 )
