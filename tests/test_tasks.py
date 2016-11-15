@@ -523,7 +523,7 @@ class PullDockerTasksTestCase(unittest.TestCase):
                 deploy_kwargs=dict(),
                 expected_calls=[
                     mock.call.local('docker pull test:latest', quiet=False, use_cache=True),
-                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('for image in $(docker images --filter "dangling=true" --quiet); do docker rmi "$image"; done'),
                     mock.call.local('docker tag test:latest localhost:5000/test:latest', use_cache=True),
                     mock.call.local('docker push localhost:5000/test:latest', quiet=False, use_cache=True),
                     mock.call.local('docker rmi localhost:5000/test:latest', use_cache=True),
@@ -537,7 +537,7 @@ class PullDockerTasksTestCase(unittest.TestCase):
                 deploy_kwargs=dict(),
                 expected_calls=[
                     mock.call.local('docker pull test:latest', quiet=False, use_cache=True),
-                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('for image in $(docker images --filter "dangling=true" --quiet); do docker rmi "$image"; done'),
                     mock.call.local('docker tag test:latest localhost:5000/test:latest', use_cache=True),
                     mock.call.local('docker push localhost:5000/test:latest', quiet=False, use_cache=True),
                     mock.call.local('docker rmi localhost:5000/test:latest', use_cache=True),
@@ -551,7 +551,7 @@ class PullDockerTasksTestCase(unittest.TestCase):
                 deploy_kwargs=dict(),
                 expected_calls=[
                     mock.call.local('docker pull test:latest', quiet=False, use_cache=True),
-                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('for image in $(docker images --filter "dangling=true" --quiet); do docker rmi "$image"; done'),
                     mock.call.local('docker tag test:latest localhost:5000/test:latest', use_cache=True),
                     mock.call.local('docker push localhost:5000/test:latest', quiet=False, use_cache=True),
                     mock.call.local('docker rmi localhost:5000/test:latest', use_cache=True),
@@ -567,7 +567,7 @@ class PullDockerTasksTestCase(unittest.TestCase):
                 deploy_kwargs=dict(),
                 expected_calls=[
                     mock.call.local('docker pull test:latest', quiet=False, use_cache=True),
-                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('for image in $(docker images --filter "dangling=true" --quiet); do docker rmi "$image"; done'),
                     mock.call.local('docker tag test:latest localhost:5000/test:latest', use_cache=True),
                     mock.call.local('docker push localhost:5000/test:latest', quiet=False, use_cache=True),
                     mock.call.local('docker rmi localhost:5000/test:latest', use_cache=True),
@@ -584,7 +584,7 @@ class PullDockerTasksTestCase(unittest.TestCase):
                 deploy_kwargs=dict(),
                 expected_calls=[
                     mock.call.local('docker pull test:latest', quiet=False, use_cache=True),
-                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('for image in $(docker images --filter "dangling=true" --quiet); do docker rmi "$image"; done'),
                     mock.call.local('docker tag test:latest localhost:5000/test:latest', use_cache=True),
                     mock.call.local('docker push localhost:5000/test:latest', quiet=False, use_cache=True),
                     mock.call.local('docker rmi localhost:5000/test:latest', use_cache=True),
@@ -601,7 +601,7 @@ class PullDockerTasksTestCase(unittest.TestCase):
                 deploy_kwargs=dict(),
                 expected_calls=[
                     mock.call.local('docker pull test:latest', quiet=False, use_cache=True),
-                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('for image in $(docker images --filter "dangling=true" --quiet); do docker rmi "$image"; done'),
                     mock.call.local('docker tag test:latest host:1234/test:latest', use_cache=True),
                     mock.call.local('docker push host:1234/test:latest', quiet=False, use_cache=True),
                     mock.call.local('docker rmi host:1234/test:latest', use_cache=True),
@@ -616,7 +616,7 @@ class PullDockerTasksTestCase(unittest.TestCase):
                 deploy_kwargs=dict(force='yes'),
                 expected_calls=[
                     mock.call.local('docker pull test:latest', quiet=False, use_cache=True),
-                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('for image in $(docker images --filter "dangling=true" --quiet); do docker rmi "$image"; done'),
                     mock.call.local('docker tag test:latest localhost:5000/test:latest', use_cache=True),
                     mock.call.local('docker push localhost:5000/test:latest', quiet=False, use_cache=True),
                     mock.call.local('docker rmi localhost:5000/test:latest', use_cache=True),
@@ -630,7 +630,7 @@ class PullDockerTasksTestCase(unittest.TestCase):
                 deploy_kwargs=dict(tag='tag'),
                 expected_calls=[
                     mock.call.local('docker pull test:tag', quiet=False, use_cache=True),
-                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('for image in $(docker images --filter "dangling=true" --quiet); do docker rmi "$image"; done'),
                     mock.call.local('docker tag test:tag localhost:5000/test:tag', use_cache=True),
                     mock.call.local('docker push localhost:5000/test:tag', quiet=False, use_cache=True),
                     mock.call.local('docker rmi localhost:5000/test:tag', use_cache=True),
@@ -644,7 +644,7 @@ class PullDockerTasksTestCase(unittest.TestCase):
                 deploy_kwargs=dict(backup='yes'),
                 expected_calls=[
                     mock.call.local('docker pull test:latest', quiet=False, use_cache=True),
-                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('for image in $(docker images --filter "dangling=true" --quiet); do docker rmi "$image"; done'),
                     mock.call.local('docker tag test:latest localhost:5000/test:latest', use_cache=True),
                     mock.call.local('docker push localhost:5000/test:latest', quiet=False, use_cache=True),
                     mock.call.local('docker rmi localhost:5000/test:latest', use_cache=True),
@@ -659,7 +659,7 @@ class PullDockerTasksTestCase(unittest.TestCase):
                 deploy_kwargs=dict(migrate='no'),
                 expected_calls=[
                     mock.call.local('docker pull test:latest', quiet=False, use_cache=True),
-                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('for image in $(docker images --filter "dangling=true" --quiet); do docker rmi "$image"; done'),
                     mock.call.local('docker tag test:latest localhost:5000/test:latest', use_cache=True),
                     mock.call.local('docker push localhost:5000/test:latest', quiet=False, use_cache=True),
                     mock.call.local('docker rmi localhost:5000/test:latest', use_cache=True),
@@ -710,7 +710,7 @@ class BuildDockerTasksTestCase(unittest.TestCase):
                 deploy_kwargs=dict(),
                 expected_calls=[
                     mock.call.local('docker build --tag test:latest --pull .', quiet=False, use_cache=True),
-                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('for image in $(docker images --filter "dangling=true" --quiet); do docker rmi "$image"; done'),
                     mock.call.local('docker tag test:latest localhost:5000/test:latest', use_cache=True),
                     mock.call.local('docker push localhost:5000/test:latest', quiet=False, use_cache=True),
                     mock.call.local('docker rmi localhost:5000/test:latest', use_cache=True),
@@ -724,7 +724,7 @@ class BuildDockerTasksTestCase(unittest.TestCase):
                 deploy_kwargs=dict(),
                 expected_calls=[
                     mock.call.local('docker build --tag test:latest --pull .', quiet=False, use_cache=True),
-                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('for image in $(docker images --filter "dangling=true" --quiet); do docker rmi "$image"; done'),
                     mock.call.local('docker tag test:latest localhost:5000/test:latest', use_cache=True),
                     mock.call.local('docker push localhost:5000/test:latest', quiet=False, use_cache=True),
                     mock.call.local('docker rmi localhost:5000/test:latest', use_cache=True),
@@ -738,7 +738,7 @@ class BuildDockerTasksTestCase(unittest.TestCase):
                 deploy_kwargs=dict(no_cache=True),
                 expected_calls=[
                     mock.call.local('docker build --tag test:latest --no-cache --pull .', quiet=False, use_cache=True),
-                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('for image in $(docker images --filter "dangling=true" --quiet); do docker rmi "$image"; done'),
                     mock.call.local('docker tag test:latest localhost:5000/test:latest', use_cache=True),
                     mock.call.local('docker push localhost:5000/test:latest', quiet=False, use_cache=True),
                     mock.call.local('docker rmi localhost:5000/test:latest', use_cache=True),
@@ -752,7 +752,7 @@ class BuildDockerTasksTestCase(unittest.TestCase):
                 deploy_kwargs=dict(),
                 expected_calls=[
                     mock.call.local('docker build --tag test:latest --pull build/path', quiet=False, use_cache=True),
-                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('for image in $(docker images --filter "dangling=true" --quiet); do docker rmi "$image"; done'),
                     mock.call.local('docker tag test:latest localhost:5000/test:latest', use_cache=True),
                     mock.call.local('docker push localhost:5000/test:latest', quiet=False, use_cache=True),
                     mock.call.local('docker rmi localhost:5000/test:latest', use_cache=True),
@@ -767,7 +767,7 @@ class BuildDockerTasksTestCase(unittest.TestCase):
                 deploy_kwargs=dict(),
                 expected_calls=[
                     mock.call.local('docker build --tag test:latest --pull .', quiet=False, use_cache=True),
-                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('for image in $(docker images --filter "dangling=true" --quiet); do docker rmi "$image"; done'),
                     mock.call.local('docker tag test:latest localhost:5000/test:latest', use_cache=True),
                     mock.call.local('docker push localhost:5000/test:latest', quiet=False, use_cache=True),
                     mock.call.local('docker rmi localhost:5000/test:latest', use_cache=True),
@@ -783,7 +783,7 @@ class BuildDockerTasksTestCase(unittest.TestCase):
                 deploy_kwargs=dict(),
                 expected_calls=[
                     mock.call.local('docker build --tag test:latest --pull .', quiet=False, use_cache=True),
-                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('for image in $(docker images --filter "dangling=true" --quiet); do docker rmi "$image"; done'),
                     mock.call.local('docker tag test:latest localhost:5000/test:latest', use_cache=True),
                     mock.call.local('docker push localhost:5000/test:latest', quiet=False, use_cache=True),
                     mock.call.local('docker rmi localhost:5000/test:latest', use_cache=True),
@@ -800,7 +800,7 @@ class BuildDockerTasksTestCase(unittest.TestCase):
                 deploy_kwargs=dict(),
                 expected_calls=[
                     mock.call.local('docker build --tag test:latest --pull .', quiet=False, use_cache=True),
-                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('for image in $(docker images --filter "dangling=true" --quiet); do docker rmi "$image"; done'),
                     mock.call.local('docker tag test:latest localhost:5000/test:latest', use_cache=True),
                     mock.call.local('docker push localhost:5000/test:latest', quiet=False, use_cache=True),
                     mock.call.local('docker rmi localhost:5000/test:latest', use_cache=True),
@@ -817,7 +817,7 @@ class BuildDockerTasksTestCase(unittest.TestCase):
                 deploy_kwargs=dict(),
                 expected_calls=[
                     mock.call.local('docker build --tag test:latest --pull .', quiet=False, use_cache=True),
-                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('for image in $(docker images --filter "dangling=true" --quiet); do docker rmi "$image"; done'),
                     mock.call.local('docker tag test:latest host:1234/test:latest', use_cache=True),
                     mock.call.local('docker push host:1234/test:latest', quiet=False, use_cache=True),
                     mock.call.local('docker rmi host:1234/test:latest', use_cache=True),
@@ -832,7 +832,7 @@ class BuildDockerTasksTestCase(unittest.TestCase):
                 deploy_kwargs=dict(force='yes'),
                 expected_calls=[
                     mock.call.local('docker build --tag test:latest --pull .', quiet=False, use_cache=True),
-                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('for image in $(docker images --filter "dangling=true" --quiet); do docker rmi "$image"; done'),
                     mock.call.local('docker tag test:latest localhost:5000/test:latest', use_cache=True),
                     mock.call.local('docker push localhost:5000/test:latest', quiet=False, use_cache=True),
                     mock.call.local('docker rmi localhost:5000/test:latest', use_cache=True),
@@ -846,7 +846,7 @@ class BuildDockerTasksTestCase(unittest.TestCase):
                 deploy_kwargs=dict(tag='tag'),
                 expected_calls=[
                     mock.call.local('docker build --tag test:tag --pull .', quiet=False, use_cache=True),
-                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('for image in $(docker images --filter "dangling=true" --quiet); do docker rmi "$image"; done'),
                     mock.call.local('docker tag test:tag localhost:5000/test:tag', use_cache=True),
                     mock.call.local('docker push localhost:5000/test:tag', quiet=False, use_cache=True),
                     mock.call.local('docker rmi localhost:5000/test:tag', use_cache=True),
@@ -860,7 +860,7 @@ class BuildDockerTasksTestCase(unittest.TestCase):
                 deploy_kwargs=dict(backup='yes'),
                 expected_calls=[
                     mock.call.local('docker build --tag test:latest --pull .', quiet=False, use_cache=True),
-                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('for image in $(docker images --filter "dangling=true" --quiet); do docker rmi "$image"; done'),
                     mock.call.local('docker tag test:latest localhost:5000/test:latest', use_cache=True),
                     mock.call.local('docker push localhost:5000/test:latest', quiet=False, use_cache=True),
                     mock.call.local('docker rmi localhost:5000/test:latest', use_cache=True),
@@ -875,7 +875,7 @@ class BuildDockerTasksTestCase(unittest.TestCase):
                 deploy_kwargs=dict(migrate='no'),
                 expected_calls=[
                     mock.call.local('docker build --tag test:latest --pull .', quiet=False, use_cache=True),
-                    mock.call.local('docker images --filter "dangling=true" --quiet | xargs --no-run-if-empty docker rmi'),
+                    mock.call.local('for image in $(docker images --filter "dangling=true" --quiet); do docker rmi "$image"; done'),
                     mock.call.local('docker tag test:latest localhost:5000/test:latest', use_cache=True),
                     mock.call.local('docker push localhost:5000/test:latest', quiet=False, use_cache=True),
                     mock.call.local('docker rmi localhost:5000/test:latest', use_cache=True),

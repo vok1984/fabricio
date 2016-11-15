@@ -1,10 +1,15 @@
 Changelog
 =========
 
+Release 0.3.12
+--------------
+
+- Fix: run/local: show detailed information about error occurred
+
 Release 0.3.11
 --------------
 
-- Change: deprecated ``PullDockerTasks`` and ``BuildDockerTasks``, ``DockerTasks`` and ``ImageBuildDockerTasks`` can be used instead, accordingly
+- Fix: macOS: fixed dangling entities removal
 
 Release 0.3.10
 --------------
