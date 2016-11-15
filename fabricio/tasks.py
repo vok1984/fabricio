@@ -399,7 +399,7 @@ class DockerTasks(Tasks):
     def __init__(
         self,
         service=None,
-        container=None,
+        container=None,  # deprecated
         registry=None,
         ssh_tunnel_port=None,
         migrate_commands=False,
