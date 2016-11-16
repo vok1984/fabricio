@@ -15,4 +15,6 @@ db = tasks.DockerTasks(
         ),
     ),
     hosts=AvailableVagrantHosts(guest_network_interface='eth1'),
+    registry='localhost:5000',
+    ssh_tunnel_port=5000,
 )
