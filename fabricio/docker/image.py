@@ -104,6 +104,9 @@ class Image(object):
 
     @classmethod
     def make_container_options(cls, temporary=None, name=None, options=()):
+        additional_options = temporary and {
+            'restart': None,  # temporary containers can't be restarted
+        } or {}
         return Options(
             options,
             name=name,
@@ -111,6 +114,7 @@ class Image(object):
             tty=temporary,
             interactive=temporary,
             detach=temporary is not None and not temporary,
+            **additional_options
         )
 
     @property

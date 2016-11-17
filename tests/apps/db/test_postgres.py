@@ -13,7 +13,8 @@ import fabricio
 
 from fabricio.apps.db import postgres
 from fabricio import docker
-from tests import SucceededResult, FailedResult, docker_run_args_parser
+from tests import SucceededResult, FailedResult, docker_run_args_parser, \
+    docker_inspect_args_parser
 
 
 class TestContainer(postgres.PostgresqlContainer):
@@ -519,28 +520,43 @@ class PostgresqlContainerTestCase(unittest.TestCase):
     def test_backup(self):
         cases = dict(
             default=dict(
-                expected_commands=[
-                    mock.call('docker inspect --type container name'),
-                    mock.call('docker run --rm --tty --interactive image_id pg_dump --username postgres --if-exists --create --clean --format c --jobs 1 --file /data/backup/postgres/backup.dump', quiet=False),
-                ],
                 side_effect=(
                     SucceededResult('[{"Image": "image_id"}]'),
                     SucceededResult(),
                 ),
+                args_parsers=[
+                    docker_inspect_args_parser,
+                    docker_run_args_parser,
+                ],
                 container_class_attributes=dict(
                     db_backup_dir='/data/backup/postgres',
                     db_backup_filename='backup.dump',
                 ),
+                expected_args=[
+                    {
+                        'executable': ['docker', 'inspect'],
+                        'type': 'container',
+                        'image_or_container': 'name',
+                    },
+                    {
+                        'executable': ['docker', 'run'],
+                        'rm': True,
+                        'tty': True,
+                        'interactive': True,
+                        'image': 'image_id',
+                        'command': ['pg_dump', '--username', 'postgres', '--if-exists', '--create', '--clean', '--format', 'c', '--jobs', '1', '--file', '/data/backup/postgres/backup.dump'],
+                    },
+                ],
             ),
             regular=dict(
-                expected_commands=[
-                    mock.call('docker inspect --type container name'),
-                    mock.call('docker run --rm --tty --interactive image_id pg_dump --username user --host localhost --port 5432 --if-exists --create --clean --format t --dbname test_db --compress 9 --jobs 2 --file /data/backup/postgres/backup.dump', quiet=False),
-                ],
                 side_effect=(
                     SucceededResult('[{"Image": "image_id"}]'),
                     SucceededResult(),
                 ),
+                args_parsers=[
+                    docker_inspect_args_parser,
+                    docker_run_args_parser,
+                ],
                 container_class_attributes=dict(
                     db_backup_dir='/data/backup/postgres',
                     db_backup_filename='backup.dump',
@@ -552,9 +568,33 @@ class PostgresqlContainerTestCase(unittest.TestCase):
                     db_backup_compress_level=9,
                     db_backup_workers=2,
                 ),
+                expected_args=[
+                    {
+                        'executable': ['docker', 'inspect'],
+                        'type': 'container',
+                        'image_or_container': 'name',
+                    },
+                    {
+                        'executable': ['docker', 'run'],
+                        'rm': True,
+                        'tty': True,
+                        'interactive': True,
+                        'image': 'image_id',
+                        'command': ['pg_dump', '--username', 'user', '--host', 'localhost', '--port', '5432', '--if-exists', '--create', '--clean', '--format', 't', '--dbname', 'test_db', '--compress', '9', '--jobs', '2', '--file', '/data/backup/postgres/backup.dump'],
+                    },
+                ],
             ),
         )
+
+        def test_command(command, *args, **kwargs):
+            parser = next(args_parsers)
+            options = parser.parse_args(command.split())
+            self.assertDictEqual(vars(options), next(expected_args))
+            return next(side_effect)
         for case, data in cases.items():
+            expected_args = iter(data['expected_args'])
+            args_parsers = iter(data['args_parsers'])
+            side_effect = iter(data['side_effect'])
             with self.subTest(case=case):
                 container_type = type(
                     'TestContainer',
@@ -562,9 +602,8 @@ class PostgresqlContainerTestCase(unittest.TestCase):
                     data['container_class_attributes'],
                 )
                 container = container_type(name='name')
-                with mock.patch.object(fabricio, 'run', side_effect=data['side_effect']) as run:
+                with mock.patch.object(fabricio, 'run', side_effect=test_command):
                     container.backup()
-                    self.assertListEqual(run.mock_calls, data['expected_commands'])
 
     def test_backup_raises_error_if_db_backup_dir_not_set(self):
         class AbortException(Exception):
@@ -577,9 +616,24 @@ class PostgresqlContainerTestCase(unittest.TestCase):
     def test_restore(self):
         cases = dict(
             default=dict(
-                expected_commands=[
-                    mock.call('docker inspect --type container name'),
-                    mock.call('docker run --rm --tty --interactive image_id pg_restore --username postgres --if-exists --create --clean --dbname template1 --jobs 4 --file /data/backup/postgres/backup.dump', quiet=False),
+                expected_args=[
+                    {
+                        'executable': ['docker', 'inspect'],
+                        'type': 'container',
+                        'image_or_container': 'name',
+                    },
+                    {
+                        'executable': ['docker', 'run'],
+                        'rm': True,
+                        'tty': True,
+                        'interactive': True,
+                        'image': 'image_id',
+                        'command': ['pg_restore', '--username', 'postgres', '--if-exists', '--create', '--clean', '--dbname', 'template1', '--jobs', '4', '--file', '/data/backup/postgres/backup.dump'],
+                    },
+                ],
+                args_parsers=[
+                    docker_inspect_args_parser,
+                    docker_run_args_parser,
                 ],
                 side_effect=(
                     SucceededResult('[{"Image": "image_id"}]'),
@@ -590,9 +644,24 @@ class PostgresqlContainerTestCase(unittest.TestCase):
                 ),
             ),
             regular=dict(
-                expected_commands=[
-                    mock.call('docker inspect --type container name'),
-                    mock.call('docker run --rm --tty --interactive image_id pg_restore --username user --host localhost --port 5432 --if-exists --create --clean --dbname template1 --jobs 2 --file /data/backup/postgres/backup.dump', quiet=False),
+                expected_args=[
+                    {
+                        'executable': ['docker', 'inspect'],
+                        'type': 'container',
+                        'image_or_container': 'name',
+                    },
+                    {
+                        'executable': ['docker', 'run'],
+                        'rm': True,
+                        'tty': True,
+                        'interactive': True,
+                        'image': 'image_id',
+                        'command': ['pg_restore', '--username', 'user', '--host', 'localhost', '--port', '5432', '--if-exists', '--create', '--clean', '--dbname', 'template1', '--jobs', '2', '--file', '/data/backup/postgres/backup.dump'],
+                    },
+                ],
+                args_parsers=[
+                    docker_inspect_args_parser,
+                    docker_run_args_parser,
                 ],
                 side_effect=(
                     SucceededResult('[{"Image": "image_id"}]'),
@@ -610,7 +679,16 @@ class PostgresqlContainerTestCase(unittest.TestCase):
                 ),
             ),
         )
+
+        def test_command(command, *args, **kwargs):
+            parser = next(args_parsers)
+            options = parser.parse_args(command.split())
+            self.assertDictEqual(vars(options), next(expected_args))
+            return next(side_effect)
         for case, data in cases.items():
+            expected_args = iter(data['expected_args'])
+            args_parsers = iter(data['args_parsers'])
+            side_effect = iter(data['side_effect'])
             with self.subTest(case=case):
                 container_type = type(
                     'TestContainer',
@@ -618,9 +696,8 @@ class PostgresqlContainerTestCase(unittest.TestCase):
                     data['container_class_attributes'],
                 )
                 container = container_type(name='name')
-                with mock.patch.object(fabricio, 'run', side_effect=data['side_effect']) as run:
+                with mock.patch.object(fabricio, 'run', side_effect=test_command):
                     container.restore(backup_filename='backup.dump')
-                    self.assertListEqual(run.mock_calls, data['expected_commands'])
 
     def test_restore_raises_error_if_db_backup_dir_not_set(self):
         class AbortException(Exception):
