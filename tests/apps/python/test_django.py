@@ -335,7 +335,6 @@ class DjangoContainerTestCase(unittest.TestCase):
                         network='network',
                         stop_signal='stop_signal',
 
-                        restart_policy='restart_policy',
                         ports='ports',
                         restart_policy='restart_policy',
                     ),
