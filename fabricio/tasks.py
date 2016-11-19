@@ -382,8 +382,8 @@ class PullDockerTasks(_DockerTasks):
     @staticmethod
     def delete_dangling_images():
         fabricio.local(
-            'for image in $(docker images --filter "dangling=true" --quiet); '
-            'do docker rmi "$image"; done'
+            'for img in $(docker images --filter "dangling=true" --quiet); '
+            'do docker rmi "$img"; done'
         )
 
     def remove_obsolete_images(self):
@@ -503,10 +503,18 @@ class DockerTasks(Tasks):
 
     @staticmethod
     def delete_dangling_images():
-        fabricio.local(
-            'for image in $(docker images --filter "dangling=true" --quiet); '
-            'do docker rmi "$image"; done'
-        )
+        if os.name == 'posix':
+            # macOS, Linux, etc.
+            fabricio.local(
+                'for img in $(docker images --filter "dangling=true" --quiet); '
+                'do docker rmi "$img"; done'
+            )
+        elif os.name == 'nt':
+            # Windows
+            fabricio.local(
+                "for /F %i in ('docker images --filter \"dangling=true\" "
+                "--quiet') do @docker rmi %i"
+            )
 
     def push_image(self, tag=None):
         fabricio.local(
@@ -593,12 +601,20 @@ class DockerTasks(Tasks):
             fabricio.log('No changes detected, update skipped.')
 
     @fab.task(default=True, task_class=IgnoreHostsTask)
-    def deploy(self, tag=None, force=False, migrate=True, backup=False):
+    def deploy(
+        self,
+        tag=None,
+        force=False,
+        prepare=True,
+        backup=False,
+        migrate=True,
+    ):
         """
         prepare -> push -> backup -> pull -> migrate -> update
         """
-        fab.execute(self.prepare, tag=tag)
-        fab.execute(self.push, tag=tag)
+        if strtobool(prepare):
+            fab.execute(self.prepare, tag=tag)
+            fab.execute(self.push, tag=tag)
         if strtobool(backup):
             fab.execute(self.backup)
         fab.execute(self.pull, tag=tag)

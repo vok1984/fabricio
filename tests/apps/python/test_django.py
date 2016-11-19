@@ -67,8 +67,8 @@ class DjangoContainerTestCase(unittest.TestCase):
                     stop_signal='stop_signal',
                     stop_timeout='stop_timeout',
 
-                    restart_policy='restart_policy',
                     ports='ports',
+                    restart_policy='restart_policy',
                 ),
             ),
         )
@@ -337,6 +337,7 @@ class DjangoContainerTestCase(unittest.TestCase):
 
                         restart_policy='restart_policy',
                         ports='ports',
+                        restart_policy='restart_policy',
                     ),
                     command='command',
                     stop_timeout='stop_timeout',
