@@ -7,6 +7,10 @@ from .base import BaseService, Option, Attribute
 from .image import Image
 
 
+class ContainerNotFoundError(Exception):
+    pass
+
+
 class Container(BaseService):
 
     image = Image()
@@ -77,12 +81,10 @@ class Container(BaseService):
     @property
     def info(self):
         command = 'docker inspect --type container {container}'
-        try:
-            info = fabricio.run(command.format(container=self))
-        except RuntimeError:
-            raise RuntimeError("Container '{container}' not found".format(
-                container=self,
-            ))
+        info = fabricio.run(
+            command.format(container=self),
+            abort_exception=ContainerNotFoundError,
+        )
         return json.loads(info)[0]
 
     def delete(

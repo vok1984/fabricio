@@ -1,4 +1,4 @@
-from .image import Image
-from .container import Container
+from .image import Image, ImageNotFoundError
+from .container import Container, ContainerNotFoundError
 from .registry import Registry
-from .service import Service
+from .service import Service, ServiceNotFoundError

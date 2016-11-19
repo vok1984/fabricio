@@ -12,6 +12,10 @@ from fabricio.utils import Options
 from .registry import Registry
 
 
+class ImageNotFoundError(Exception):
+    pass
+
+
 class Image(object):
 
     def __init__(self, name=None, tag=None, registry=None):
@@ -120,10 +124,10 @@ class Image(object):
     @property
     def info(self):
         command = 'docker inspect --type image {image}'
-        try:
-            info = fabricio.run(command.format(image=self))
-        except RuntimeError:
-            raise RuntimeError("Image '{image}' not found".format(image=self))
+        info = fabricio.run(
+            command.format(image=self),
+            abort_exception=ImageNotFoundError,
+        )
         return json.loads(str(info))[0]
 
     @cached_property

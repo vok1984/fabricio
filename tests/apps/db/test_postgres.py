@@ -135,7 +135,7 @@ class PostgresqlContainerTestCase(unittest.TestCase):
                 expected_commands=[
                     mock.call('mv /data/pg_hba.conf /data/pg_hba.conf.backup', ignore_errors=True, sudo=True),
                     mock.call('docker kill --signal HUP name'),
-                    mock.call('docker inspect --type container name_backup'),
+                    mock.call('docker inspect --type container name_backup', abort_exception=docker.ContainerNotFoundError),
                     mock.call('docker rm name_backup'),
                     mock.call('for volume in $(docker volume ls --filter "dangling=true" --quiet); do docker volume rm "$volume"; done'),
                     mock.call('docker rmi image_id', ignore_errors=True),
@@ -164,7 +164,7 @@ class PostgresqlContainerTestCase(unittest.TestCase):
                 expected_commands=[
                     mock.call('mv /data/pg_hba.conf /data/pg_hba.conf.backup', ignore_errors=True, sudo=True),
                     mock.call('docker kill --signal HUP name'),
-                    mock.call('docker inspect --type container name_backup'),
+                    mock.call('docker inspect --type container name_backup', abort_exception=docker.ContainerNotFoundError),
                     mock.call('rm -f /data/postgresql.conf.backup', ignore_errors=True, sudo=True),
                 ],
                 side_effect=(
@@ -202,7 +202,7 @@ class PostgresqlContainerTestCase(unittest.TestCase):
                 expected_commands=[
                     mock.call('mv /data/postgresql.conf /data/postgresql.conf.backup', ignore_errors=True, sudo=True),
                     mock.call('docker restart --time 30 name'),
-                    mock.call('docker inspect --type container name_backup'),
+                    mock.call('docker inspect --type container name_backup', abort_exception=docker.ContainerNotFoundError),
                     mock.call('docker rm name_backup'),
                     mock.call('for volume in $(docker volume ls --filter "dangling=true" --quiet); do docker volume rm "$volume"; done'),
                     mock.call('docker rmi image_id', ignore_errors=True),
@@ -231,7 +231,7 @@ class PostgresqlContainerTestCase(unittest.TestCase):
                 expected_commands=[
                     mock.call('mv /data/postgresql.conf /data/postgresql.conf.backup', ignore_errors=True, sudo=True),
                     mock.call('docker restart --time 30 name'),
-                    mock.call('docker inspect --type container name_backup'),
+                    mock.call('docker inspect --type container name_backup', abort_exception=docker.ContainerNotFoundError),
                     mock.call('rm -f /data/pg_hba.conf.backup', ignore_errors=True, sudo=True),
                 ],
                 side_effect=(
@@ -270,7 +270,7 @@ class PostgresqlContainerTestCase(unittest.TestCase):
                     mock.call('mv /data/postgresql.conf /data/postgresql.conf.backup', ignore_errors=True, sudo=True),
                     mock.call('mv /data/pg_hba.conf /data/pg_hba.conf.backup', ignore_errors=True, sudo=True),
                     mock.call('docker restart --time 30 name'),
-                    mock.call('docker inspect --type container name_backup'),
+                    mock.call('docker inspect --type container name_backup', abort_exception=docker.ContainerNotFoundError),
                     mock.call('docker rm name_backup'),
                     mock.call('for volume in $(docker volume ls --filter "dangling=true" --quiet); do docker volume rm "$volume"; done'),
                     mock.call('docker rmi image_id', ignore_errors=True),
@@ -299,7 +299,7 @@ class PostgresqlContainerTestCase(unittest.TestCase):
                     mock.call('mv /data/postgresql.conf /data/postgresql.conf.backup', ignore_errors=True, sudo=True),
                     mock.call('mv /data/pg_hba.conf /data/pg_hba.conf.backup', ignore_errors=True, sudo=True),
                     mock.call('docker restart --time 30 name'),
-                    mock.call('docker inspect --type container name_backup'),
+                    mock.call('docker inspect --type container name_backup', abort_exception=docker.ContainerNotFoundError),
                 ],
                 side_effect=(
                     SucceededResult(),
@@ -337,7 +337,7 @@ class PostgresqlContainerTestCase(unittest.TestCase):
                     mock.call('mv /data/postgresql.conf /data/postgresql.conf.backup', ignore_errors=True, sudo=True),
                     mock.call('mv /data/pg_hba.conf /data/pg_hba.conf.backup', ignore_errors=True, sudo=True),
                     mock.call('docker restart --time 30 name'),
-                    mock.call('docker inspect --type container name_backup'),
+                    mock.call('docker inspect --type container name_backup', abort_exception=docker.ContainerNotFoundError),
                 ],
                 side_effect=(
                     SucceededResult(),

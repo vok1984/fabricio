@@ -435,9 +435,5 @@ class DjangoContainerTestCase(unittest.TestCase):
             with self.subTest(case=case):
                 with mock.patch.object(fabricio, 'run', side_effect=test_command):
                     container = DjangoContainer(name='name', image='image')
-                    with self.assertRaises(data['expected_exception']) as cm:
+                    with self.assertRaises(data['expected_exception']):
                         container.migrate_back()
-                    self.assertEqual(
-                        cm.exception.args[0],
-                        data['expected_error_message'],
-                    )

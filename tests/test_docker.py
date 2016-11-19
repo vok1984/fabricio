@@ -274,16 +274,10 @@ class ContainerTestCase(unittest.TestCase):
             return_value=return_value,
         ) as run:
             self.assertEqual(expected, container.info)
-            run.assert_called_once_with(expected_command)
-
-    @mock.patch.object(fabricio, 'run', side_effect=RuntimeError)
-    def test_info_raises_error_if_container_not_found(self, run):
-        container = docker.Container(name='name')
-        expected_command = 'docker inspect --type container name'
-        with self.assertRaises(RuntimeError) as cm:
-            container.info
-        self.assertEqual(cm.exception.args[0], "Container 'name' not found")
-        run.assert_called_once_with(expected_command)
+            run.assert_called_once_with(
+                expected_command,
+                abort_exception=docker.ContainerNotFoundError,
+            )
 
     def test_delete(self):
         cases = dict(
@@ -297,7 +291,7 @@ class ContainerTestCase(unittest.TestCase):
             with_image=dict(
                 delete_kwargs=dict(delete_image=True),
                 expected_commands=[
-                    mock.call('docker inspect --type container name'),
+                    mock.call('docker inspect --type container name', abort_exception=docker.ContainerNotFoundError),
                     mock.call('docker rm name'),
                     mock.call('for volume in $(docker volume ls --filter "dangling=true" --quiet); do docker volume rm "$volume"; done'),
                     mock.call('docker rmi image_id', ignore_errors=True),
@@ -319,7 +313,7 @@ class ContainerTestCase(unittest.TestCase):
             complex=dict(
                 delete_kwargs=dict(force=True, delete_image=True),
                 expected_commands=[
-                    mock.call('docker inspect --type container name'),
+                    mock.call('docker inspect --type container name', abort_exception=docker.ContainerNotFoundError),
                     mock.call('docker rm --force name'),
                     mock.call('for volume in $(docker volume ls --filter "dangling=true" --quiet); do docker volume rm "$volume"; done'),
                     mock.call('docker rmi image_id', ignore_errors=True),
@@ -869,8 +863,8 @@ class ContainerTestCase(unittest.TestCase):
                     SucceededResult(),  # force starting container
                 ),
                 expected_commands=[
-                    mock.call('docker inspect --type container name'),
-                    mock.call('docker inspect --type image image:tag'),
+                    mock.call('docker inspect --type container name', abort_exception=docker.ContainerNotFoundError),
+                    mock.call('docker inspect --type image image:tag', abort_exception=docker.ImageNotFoundError),
                     mock.call('docker start name'),
                 ],
                 update_kwargs=dict(),
@@ -883,8 +877,8 @@ class ContainerTestCase(unittest.TestCase):
                     SucceededResult(),  # force starting container
                 ),
                 expected_commands=[
-                    mock.call('docker inspect --type container name'),
-                    mock.call('docker inspect --type image image:foo'),
+                    mock.call('docker inspect --type container name', abort_exception=docker.ContainerNotFoundError),
+                    mock.call('docker inspect --type image image:foo', abort_exception=docker.ImageNotFoundError),
                     mock.call('docker start name'),
                 ],
                 update_kwargs=dict(tag='foo'),
@@ -901,7 +895,7 @@ class ContainerTestCase(unittest.TestCase):
                     SucceededResult('new_container_id'),  # run new container
                 ),
                 expected_commands=[
-                    mock.call('docker inspect --type container name_backup'),
+                    mock.call('docker inspect --type container name_backup', abort_exception=docker.ContainerNotFoundError),
                     mock.call('docker rm name_backup'),
                     mock.call('for volume in $(docker volume ls --filter "dangling=true" --quiet); do docker volume rm "$volume"; done'),
                     mock.call('docker rmi image_id', ignore_errors=True),
@@ -925,9 +919,9 @@ class ContainerTestCase(unittest.TestCase):
                     SucceededResult('new_container_id'),  # run new container
                 ),
                 expected_commands=[
-                    mock.call('docker inspect --type container name'),
-                    mock.call('docker inspect --type image image:tag'),
-                    mock.call('docker inspect --type container name_backup'),
+                    mock.call('docker inspect --type container name', abort_exception=docker.ContainerNotFoundError),
+                    mock.call('docker inspect --type image image:tag', abort_exception=docker.ImageNotFoundError),
+                    mock.call('docker inspect --type container name_backup', abort_exception=docker.ContainerNotFoundError),
                     mock.call('docker rm name_backup'),
                     mock.call('for volume in $(docker volume ls --filter "dangling=true" --quiet); do docker volume rm "$volume"; done'),
                     mock.call('docker rmi old_image_id', ignore_errors=True),
@@ -951,9 +945,9 @@ class ContainerTestCase(unittest.TestCase):
                     SucceededResult('new_container_id'),  # run new container
                 ),
                 expected_commands=[
-                    mock.call('docker inspect --type container name'),
-                    mock.call('docker inspect --type image image:foo'),
-                    mock.call('docker inspect --type container name_backup'),
+                    mock.call('docker inspect --type container name', abort_exception=docker.ContainerNotFoundError),
+                    mock.call('docker inspect --type image image:foo', abort_exception=docker.ImageNotFoundError),
+                    mock.call('docker inspect --type container name_backup', abort_exception=docker.ContainerNotFoundError),
                     mock.call('docker rm name_backup'),
                     mock.call('for volume in $(docker volume ls --filter "dangling=true" --quiet); do docker volume rm "$volume"; done'),
                     mock.call('docker rmi old_image_id', ignore_errors=True),
@@ -977,9 +971,9 @@ class ContainerTestCase(unittest.TestCase):
                     SucceededResult('new_container_id'),  # run new container
                 ),
                 expected_commands=[
-                    mock.call('docker inspect --type container name'),
-                    mock.call('docker inspect --type image registry/image:tag'),
-                    mock.call('docker inspect --type container name_backup'),
+                    mock.call('docker inspect --type container name', abort_exception=docker.ContainerNotFoundError),
+                    mock.call('docker inspect --type image registry/image:tag', abort_exception=docker.ImageNotFoundError),
+                    mock.call('docker inspect --type container name_backup', abort_exception=docker.ContainerNotFoundError),
                     mock.call('docker rm name_backup'),
                     mock.call('for volume in $(docker volume ls --filter "dangling=true" --quiet); do docker volume rm "$volume"; done'),
                     mock.call('docker rmi old_image_id', ignore_errors=True),
@@ -1003,9 +997,9 @@ class ContainerTestCase(unittest.TestCase):
                     SucceededResult('new_container_id'),  # run new container
                 ),
                 expected_commands=[
-                    mock.call('docker inspect --type container name'),
-                    mock.call('docker inspect --type image registry/image:foo'),
-                    mock.call('docker inspect --type container name_backup'),
+                    mock.call('docker inspect --type container name', abort_exception=docker.ContainerNotFoundError),
+                    mock.call('docker inspect --type image registry/image:foo', abort_exception=docker.ImageNotFoundError),
+                    mock.call('docker inspect --type container name_backup', abort_exception=docker.ContainerNotFoundError),
                     mock.call('docker rm name_backup'),
                     mock.call('for volume in $(docker volume ls --filter "dangling=true" --quiet); do docker volume rm "$volume"; done'),
                     mock.call('docker rmi old_image_id', ignore_errors=True),
@@ -1026,9 +1020,9 @@ class ContainerTestCase(unittest.TestCase):
                     SucceededResult('new_container_id'),  # run new container
                 ),
                 expected_commands=[
-                    mock.call('docker inspect --type container name'),
-                    mock.call('docker inspect --type image image:tag'),
-                    mock.call('docker inspect --type container name_backup'),
+                    mock.call('docker inspect --type container name', abort_exception=docker.ContainerNotFoundError),
+                    mock.call('docker inspect --type image image:tag', abort_exception=docker.ImageNotFoundError),
+                    mock.call('docker inspect --type container name_backup', abort_exception=docker.ContainerNotFoundError),
                     mock.call('docker rename name name_backup'),
                     mock.call('docker stop --time 10 name_backup'),
                     mock.call('docker run --detach --name name image:tag ', quiet=True),
@@ -1044,7 +1038,7 @@ class ContainerTestCase(unittest.TestCase):
                     SucceededResult('new_container_id'),  # run new container
                 ),
                 expected_commands=[
-                    mock.call('docker inspect --type container name_backup'),
+                    mock.call('docker inspect --type container name_backup', abort_exception=docker.ContainerNotFoundError),
                     mock.call('docker rename name name_backup'),
                     mock.call('docker stop --time 10 name_backup'),
                     mock.call('docker run --detach --name name image:tag ', quiet=True),
@@ -1060,8 +1054,8 @@ class ContainerTestCase(unittest.TestCase):
                     SucceededResult('new_container_id'),  # run new container
                 ),
                 expected_commands=[
-                    mock.call('docker inspect --type container name'),
-                    mock.call('docker inspect --type container name_backup'),
+                    mock.call('docker inspect --type container name', abort_exception=docker.ContainerNotFoundError),
+                    mock.call('docker inspect --type container name_backup', abort_exception=docker.ContainerNotFoundError),
                     mock.call('docker rename name name_backup'),
                     mock.call('docker run --detach --name name image:tag ', quiet=True),
                 ],
@@ -1098,10 +1092,10 @@ class ContainerTestCase(unittest.TestCase):
             SucceededResult(),  # rename backup container
         )
         expected_commands = [
-            mock.call('docker inspect --type container name_backup'),
+            mock.call('docker inspect --type container name_backup', abort_exception=docker.ContainerNotFoundError),
             mock.call('docker stop --time 10 name'),
             mock.call('docker start name_backup'),
-            mock.call('docker inspect --type container name'),
+            mock.call('docker inspect --type container name', abort_exception=docker.ContainerNotFoundError),
             mock.call('docker rm name'),
             mock.call('for volume in $(docker volume ls --filter "dangling=true" --quiet); do docker volume rm "$volume"; done'),
             mock.call('docker rmi failed_image_id', ignore_errors=True),
@@ -1112,15 +1106,18 @@ class ContainerTestCase(unittest.TestCase):
             container.revert()
             self.assertListEqual(run.mock_calls, expected_commands)
 
-    @mock.patch.object(fabricio, 'run', side_effect=RuntimeError)
-    def test_revert_raises_error_if_backup_container_not_found(self, *args):
+    @mock.patch.object(
+        docker.Container,
+        'info',
+        new_callable=mock.PropertyMock,
+        side_effect=docker.ContainerNotFoundError,
+    )
+    @mock.patch.object(fabricio, 'run')
+    def test_revert_raises_error_if_backup_container_not_found(self, run, *args):
         container = docker.Container(name='name')
-        with self.assertRaises(RuntimeError) as cm:
+        with self.assertRaises(docker.ContainerNotFoundError):
             container.revert()
-        self.assertEqual(
-            cm.exception.args[0],
-            "Container 'name_backup' not found",
-        )
+        run.assert_not_called()
 
 
 class ImageTestCase(unittest.TestCase):
@@ -1136,16 +1133,21 @@ class ImageTestCase(unittest.TestCase):
             return_value=return_value,
         ) as run:
             self.assertEqual(expected, image.info)
-            run.assert_called_once_with(expected_command)
+            run.assert_called_once_with(
+                expected_command,
+                abort_exception=docker.ImageNotFoundError,
+            )
 
     @mock.patch.object(fabricio, 'run', side_effect=RuntimeError)
     def test_info_raises_error_if_image_not_found(self, run):
         image = docker.Image(name='name')
         expected_command = 'docker inspect --type image name:latest'
-        with self.assertRaises(RuntimeError) as cm:
+        with self.assertRaises(RuntimeError):
             image.info
-        self.assertEqual(cm.exception.args[0], "Image 'name:latest' not found")
-        run.assert_called_once_with(expected_command)
+        run.assert_called_once_with(
+            expected_command,
+            abort_exception=docker.ImageNotFoundError,
+        )
 
     def test_delete(self):
         cases = dict(
