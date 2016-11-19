@@ -16,6 +16,7 @@ def _command(
     quiet=True,
     hide=('running', ),
     show=(),
+    abort_exception=RuntimeError,
     **kwargs
 ):
     if quiet:
@@ -27,7 +28,7 @@ def _command(
     with fab.settings(
         fab.hide(*hide),
         fab.show(*show),
-        abort_exception=RuntimeError,
+        abort_exception=abort_exception,
         warn_only=ignore_errors,
     ):
         return fabric_method(command, **kwargs)

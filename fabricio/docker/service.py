@@ -20,6 +20,10 @@ from .base import BaseService, Option, Attribute
 from .container import Container
 
 
+class ServiceNotFoundError(Exception):
+    pass
+
+
 class RemovableOption(Option):
 
     get_values = staticmethod(dpath.util.values)
@@ -209,22 +213,13 @@ class Service(BaseService):
 
     def _update(self):
         try:
-            pass
-            # TODO find if service exists
-            # service_spec = json.loads(fabricio.run(
-            #     "docker service inspect --format '{{{{json .Spec}}}}' "
-            #     "{service}".format(
-            #         service=self,
-            #     ),
-            # ))
-        except RuntimeError:
-            self._create()
-        else:
             fabricio.run('docker service update {options} {service}'.format(
                 options=utils.Options(self.update_options),
                 service=self,
             ))
-        self._reset_cache_key()  # reset any cache after service update
+            self._reset_cache_key()  # reset any cache after service update
+        except ServiceNotFoundError:
+            self._create()
 
     def _create(self):
         pass  # TODO
@@ -295,17 +290,12 @@ class Service(BaseService):
     @property
     def info(self):
         command = 'docker service inspect {service}'
-        try:
-            info = fabricio.run(
-                command.format(service=self),
-                use_cache=True,
-                cache_key=self._cache_key,
-            )
-        except RuntimeError:
-            raise RuntimeError(
-                "Service '{service}' not found or host is "
-                "not a swarm manager".format(service=self)
-            )
+        info = fabricio.run(
+            command.format(service=self),
+            use_cache=True,
+            cache_key=self._cache_key,
+            abort_exception=ServiceNotFoundError,
+        )
         return json.loads(info)[0]
 
     @property
