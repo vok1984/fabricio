@@ -579,7 +579,7 @@ class DockerTasksTestCase(unittest.TestCase):
             with self.subTest(case=case):
                 with mock.patch.object(fabricio, 'local') as local:
                     with mock.patch('os.name', data['os_name']):
-                        tasks_list = tasks.DockerTasks(container=docker.Container(name='name'))
+                        tasks_list = tasks.DockerTasks(service=docker.Container(name='name'))
                         tasks_list.delete_dangling_images()
                         local.assert_called_once_with(data['expected_command'])
 
