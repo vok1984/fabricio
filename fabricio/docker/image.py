@@ -23,7 +23,7 @@ class Image(object):
             _registry, _name, _tag = self.parse_image_name(name)
             self.name = _name
             self.tag = tag or _tag or 'latest'  # TODO 'latest' is unnecessary
-            registry = registry or _registry or None
+            registry = registry or _registry
         else:
             self.name = name
             self.tag = tag
@@ -34,7 +34,7 @@ class Image(object):
     def __str__(self):
         if self.container is not None:
             return self.id
-        return repr(self)
+        return self.__repr__()
 
     def __repr__(self):
         if self.registry:
@@ -103,7 +103,7 @@ class Image(object):
         repository, tag = docker_utils.parse_repository_tag(image)
         registry, name = docker_auth.resolve_repository_name(repository)
         if registry == docker_auth.INDEX_NAME:
-            registry = ''
+            registry = None
         return registry, name, tag
 
     @classmethod
@@ -120,6 +120,12 @@ class Image(object):
             detach=temporary is not None and not temporary,
             **additional_options
         )
+
+    @property
+    def digest(self):
+        for repo_digest in self.info.get('RepoDigests', ()):
+            return repo_digest
+        return self.__str__()
 
     @property
     def info(self):

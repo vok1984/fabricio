@@ -550,12 +550,12 @@ class DockerTasks(Tasks):
             'docker pull {image}'.format(image=temporary_tag),
             quiet=False,
         )
-        if registry and registry != self.image.registry:
-            fabricio.run('docker tag {image} {tag}'.format(
-                image=temporary_tag,
-                tag=self.image[tag],
-            ))
-            fabricio.run('docker rmi {image}'.format(image=temporary_tag))
+        # if registry and registry != self.image.registry:
+        #     fabricio.run('docker tag {image} {tag}'.format(
+        #         image=temporary_tag,
+        #         tag=self.image[tag],
+        #     ))
+        #     fabricio.run('docker rmi {image}'.format(image=temporary_tag))
 
     @fab.task
     @skip_unknown_host
@@ -585,6 +585,7 @@ class DockerTasks(Tasks):
                         local_port=local_port,
                         local_host=local_host,
                     ):
+                        # TODO use this registry for all operations on remote host
                         registry = 'localhost:{0}'.format(self.ssh_tunnel_port)
                         self.pull_image(tag=tag, registry=registry)
         else:

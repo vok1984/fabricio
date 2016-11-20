@@ -206,7 +206,7 @@ class Service(BaseService):
                 (option, callback(self))
                 for option, callback in self._update_options.items()
             ),
-            image=self.image,
+            image=self.image.digest,
             args=self.args,
             **self._additional_options
         )
