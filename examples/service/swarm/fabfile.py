@@ -40,6 +40,4 @@ nginx = tasks.DockerTasks(
         ),
     ),
     hosts=hosts,
-    registry='localhost:5000',
-    ssh_tunnel_port=5000,
 )

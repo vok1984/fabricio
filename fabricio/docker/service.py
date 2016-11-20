@@ -20,7 +20,7 @@ from .base import BaseService, Option, Attribute
 from .container import Container
 
 
-class ServiceNotFoundError(Exception):
+class ServiceNotFoundError(RuntimeError):
     pass
 
 
@@ -39,15 +39,15 @@ class RemovableOption(Option):
     def get_current_values(self, service):
         return self.get_values(service.info, self.path)
 
-    def get_remove_values(self, service, service_attr):
+    def get_remove_values(self, service, attr):
         current_values = self.get_current_values(service)
         if not current_values:
             return None
-        new_values = self.get_add_values(service, service_attr)
+        new_values = self.get_add_values(service, attr)
         return set(current_values).difference(new_values)
 
-    def get_add_values(self, service, service_attr):
-        values = getattr(service, service_attr)
+    def get_add_values(self, service, attr):
+        values = getattr(service, attr)
         if values is None:
             return []
         if isinstance(values, six.string_types):
@@ -180,7 +180,7 @@ class Service(BaseService):
             **attrs
         )
 
-    @property
+    @cached_property
     def _update_options(self):
         options = {}
         for cls in type(self).__mro__[::-1]:
@@ -192,7 +192,7 @@ class Service(BaseService):
                     if isinstance(option, RemovableOption):
                         options[name + '-rm'] = functools.partial(
                             option.get_remove_values,
-                            service_attr=attr,
+                            attr=attr,
                         )
                         options[name + '-add'] = get_values
                     else:
@@ -212,14 +212,11 @@ class Service(BaseService):
         )
 
     def _update(self):
-        try:
-            fabricio.run('docker service update {options} {service}'.format(
-                options=utils.Options(self.update_options),
-                service=self,
-            ))
-            self._reset_cache_key()  # reset any cache after service update
-        except ServiceNotFoundError:
-            self._create()
+        fabricio.run('docker service update {options} {service}'.format(
+            options=utils.Options(self.update_options),
+            service=self,
+        ))
+        self._reset_cache_key()  # reset any cache after service update
 
     def _create(self):
         pass  # TODO
@@ -237,7 +234,10 @@ class Service(BaseService):
         if not sentinel_updated:
             return False
         if self.is_leader():
-            self._update()
+            try:
+                self._update()
+            except ServiceNotFoundError:
+                self._create()
         return True
 
     def revert(self):

@@ -39,6 +39,11 @@ docker_inspect_args_parser.add_argument('executable', nargs=2)
 docker_inspect_args_parser.add_argument('--type')
 docker_inspect_args_parser.add_argument('image_or_container')
 
+docker_node_inspect_args_parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
+docker_node_inspect_args_parser.add_argument('executable', nargs=3)
+docker_node_inspect_args_parser.add_argument('--format')
+docker_node_inspect_args_parser.add_argument('service')
+
 docker_service_update_args_parser = argparse.ArgumentParser(argument_default=argparse.SUPPRESS)
 docker_service_update_args_parser.add_argument('executable', nargs=3)
 docker_service_update_args_parser.add_argument('--env-add', dest='env-add', action='append')

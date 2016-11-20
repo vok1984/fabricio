@@ -12,7 +12,7 @@ from fabricio.utils import Options
 from .registry import Registry
 
 
-class ImageNotFoundError(Exception):
+class ImageNotFoundError(RuntimeError):
     pass
 
 
