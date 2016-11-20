@@ -16,13 +16,18 @@ def swarm_init():
             'docker swarm init --advertise-addr {0}'.format(fab.env.host),
             ignore_errors=True,
         )
-        join_token = fabricio.run('docker swarm join-token --quiet worker')
+        join_token = fabricio.run(
+            'docker swarm join-token --quiet worker',
+            ignore_errors=True,
+        )
         swarm_init.worker_join_command = (
             'docker swarm join --token {join_token} {host}:2377'
         ).format(join_token=join_token, host=fab.env.host)
     else:
-        fabricio.run(swarm_init.worker_join_command)
-
+        fabricio.run(
+            swarm_init.worker_join_command,
+            ignore_errors=True,
+        )
 swarm_init.worker_join_command = None
 
 nginx = tasks.DockerTasks(
@@ -35,4 +40,6 @@ nginx = tasks.DockerTasks(
         ),
     ),
     hosts=hosts,
+    registry='localhost:5000',
+    ssh_tunnel_port=5000,
 )
