@@ -1569,8 +1569,13 @@ class ImageTestCase(unittest.TestCase):
 
 class ServiceTestCase(unittest.TestCase):
 
+    def setUp(self):
+        self.fab_settings = fab.settings(fab.hide('everything'))
+        self.fab_settings.__enter__()
+
     def tearDown(self):
         fabricio.run.cache.clear()
+        self.fab_settings.__exit__(None, None, None)
 
     @mock.patch.object(
         docker.Container,
@@ -1578,13 +1583,12 @@ class ServiceTestCase(unittest.TestCase):
         new_callable=mock.PropertyMock,
         return_value=dict(Image='image_id'),
     )
-    def test__update(self, *args):
+    def test_update(self, *args):
         cases = dict(
             worker=dict(
                 init_kwargs=dict(
                     name='service',
                     image='image:tag',
-                    command='command',
                 ),
                 update_kwargs=dict(),
                 side_effect=(
@@ -1598,10 +1602,54 @@ class ServiceTestCase(unittest.TestCase):
                         'executable': ['docker', 'node', 'inspect'],
                         'format': "'{{.ManagerStatus.Leader}}'",
                         'service': 'self',
-                    }
+                    },
                 ],
                 expected_result=False,
                 container_updated=None,
+            ),
+            not_changed=dict(
+                init_kwargs=dict(
+                    name='service',
+                    image='image:tag',
+                ),
+                update_kwargs=dict(),
+                side_effect=(
+                    SucceededResult('[{"ManagerStatus": {"Leader": false}}]'),
+                ),
+                args_parsers=[
+                    docker_node_inspect_args_parser,
+                ],
+                expected_args=[
+                    {
+                        'executable': ['docker', 'node', 'inspect'],
+                        'format': "'{{.ManagerStatus.Leader}}'",
+                        'service': 'self',
+                    },
+                ],
+                expected_result=False,
+                container_updated=False,
+            ),
+            not_leader=dict(
+                init_kwargs=dict(
+                    name='service',
+                    image='image:tag',
+                ),
+                update_kwargs=dict(),
+                side_effect=(
+                    SucceededResult('[{"ManagerStatus": {"Leader": false}}]'),
+                ),
+                args_parsers=[
+                    docker_node_inspect_args_parser,
+                ],
+                expected_args=[
+                    {
+                        'executable': ['docker', 'node', 'inspect'],
+                        'format': "'{{.ManagerStatus.Leader}}'",
+                        'service': 'self',
+                    },
+                ],
+                expected_result=True,
+                container_updated=True,
             ),
             # empty_args=dict(
             #     init_kwargs=dict(
@@ -1985,7 +2033,9 @@ class ServiceTestCase(unittest.TestCase):
             args_parsers = iter(data['args_parsers'])
             side_effect = iter(data['side_effect'])
             with self.subTest(case=case):
-                with mock.patch.object(fabricio, 'run', side_effect=test_command) as run:
+                fabricio.run.cache.clear()
+                with mock.patch.object(fab, 'run', side_effect=test_command) as run:
+                    run.__name__ = 'mocked_run'
                     with mock.patch.object(docker.Container, 'update', return_value=data['container_updated']):
                         service = docker.Service(**data['init_kwargs'])
                         result = service.update(**data['update_kwargs'])
