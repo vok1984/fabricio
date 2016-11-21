@@ -161,7 +161,7 @@ class _DockerTasks(Tasks):
                 category=RuntimeWarning, stacklevel=2,
             )
         super(_DockerTasks, self).__init__(**kwargs)
-        self.registry = registry and docker.Registry(registry)
+        self.registry = docker.Registry(registry)
         self.service = service or container
         self.backup.use_task_objects = backup_commands
         self.restore.use_task_objects = backup_commands
@@ -414,8 +414,12 @@ class DockerTasks(Tasks):
             )
         super(DockerTasks, self).__init__(**kwargs)
         self.service = service or container
-        self.registry = registry and docker.Registry(registry)
-        self.ssh_tunnel_port = ssh_tunnel_port
+        self.registry = docker.Registry(registry)
+        self.host_registry = docker.Registry(
+            'localhost:{port}'.format(port=ssh_tunnel_port)
+            if ssh_tunnel_port else
+            registry
+        )
         self.backup.use_task_objects = backup_commands
         self.restore.use_task_objects = backup_commands
         self.migrate.use_task_objects = migrate_commands
@@ -445,7 +449,7 @@ class DockerTasks(Tasks):
         """
         apply migrations
         """
-        self.service.migrate(tag=tag)
+        self.service.migrate(tag=tag, registry=self.host_registry)
 
     @fab.task
     @fab.serial
@@ -544,18 +548,12 @@ class DockerTasks(Tasks):
             use_cache=True,
         )
 
-    def pull_image(self, tag=None, registry=None):
-        temporary_tag = str(self.image[registry:tag])
+    def pull_image(self, tag=None):
+        image = self.image[self.host_registry:tag]
         fabricio.run(
-            'docker pull {image}'.format(image=temporary_tag),
+            'docker pull {image}'.format(image=image),
             quiet=False,
         )
-        # if registry and registry != self.image.registry:
-        #     fabricio.run('docker tag {image} {tag}'.format(
-        #         image=temporary_tag,
-        #         tag=self.image[tag],
-        #     ))
-        #     fabricio.run('docker rmi {image}'.format(image=temporary_tag))
 
     @fab.task
     @skip_unknown_host
@@ -563,7 +561,7 @@ class DockerTasks(Tasks):
         """
         pull Docker image from registry
         """
-        if self.ssh_tunnel_port:
+        if self.host_registry and self.host_registry.host == 'localhost':
             if self.registry:
                 local_port = self.registry.port
                 local_host = self.registry.host
@@ -581,15 +579,13 @@ class DockerTasks(Tasks):
                     # printing debug messages by fab.remote_tunnel
 
                     with fab.remote_tunnel(
-                        remote_port=self.ssh_tunnel_port,
+                        remote_port=self.host_registry.port,
                         local_port=local_port,
                         local_host=local_host,
                     ):
-                        # TODO use this registry for all operations on remote host
-                        registry = 'localhost:{0}'.format(self.ssh_tunnel_port)
-                        self.pull_image(tag=tag, registry=registry)
+                        self.pull_image(tag=tag)
         else:
-            self.pull_image(tag=tag, registry=self.registry)
+            self.pull_image(tag=tag)
 
     @fab.task
     @skip_unknown_host
@@ -597,7 +593,11 @@ class DockerTasks(Tasks):
         """
         start new Docker container if necessary
         """
-        updated = self.service.update(tag=tag, force=strtobool(force))
+        updated = self.service.update(
+            tag=tag,
+            registry=self.host_registry,
+            force=strtobool(force),
+        )
         if not updated:
             fabricio.log('No changes detected, update skipped.')
 

@@ -27,7 +27,7 @@ class Image(object):
         else:
             self.name = name
             self.tag = tag
-        self.registry = registry and Registry(registry)
+        self.registry = Registry(registry)
         self.field_names = {}
         self.container = None
 
