@@ -307,7 +307,7 @@ class Service(BaseService):
         )
 
     def is_manager(self):
-        # 'docker node inspect self' command works only on manager nodes
+        # 'docker node inspect self' works only on manager nodes
         return self._leader_status.succeeded
 
     def is_leader(self):

@@ -176,7 +176,7 @@ class Container(BaseService):
         if not force:
             try:
                 current_image_id = self.image.id
-            except ContainerNotFoundError:  # current container not found
+            except ContainerNotFoundError:
                 pass
             else:
                 new_image = self.image[registry:tag]
