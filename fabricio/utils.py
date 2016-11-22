@@ -1,7 +1,6 @@
 import contextlib
 import re
 
-from copy import copy
 from distutils import util as distutils
 
 try:
@@ -29,8 +28,6 @@ class default_property(object):
 
     def __init__(self, func=None, default=None):
         self.func = func
-        if func is not None:
-            self.__doc__ = func.__doc__
         self.default = default
 
     def __get__(self, instance, owner=None):
@@ -41,9 +38,8 @@ class default_property(object):
         return self.func(instance)
 
     def __call__(self, func):
-        clone = copy(self)
-        clone.func = func
-        return clone
+        self.func = func
+        return self
 
 
 class Options(OrderedDict):
