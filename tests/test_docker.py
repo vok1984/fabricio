@@ -1712,319 +1712,6 @@ class ServiceTestCase(unittest.TestCase):
                 expected_result=True,
                 container_updated=True,
             ),
-            # new_options_values=dict(
-            #     init_kwargs=dict(
-            #         name='service',
-            #         image='image:tag',
-            #         options=dict(
-            #             ports=[
-            #                 'source:target',
-            #                 'source2:target2',
-            #             ],
-            #             mounts=[
-            #                 'type=volume,destination=/path',
-            #                 'type=volume,destination="/path2"',
-            #             ],
-            #             labels=[
-            #                 'label=value',
-            #                 'label2=value2',
-            #             ],
-            #             container_labels=[
-            #                 'label=value',
-            #                 'label2=value2',
-            #             ],
-            #             constraints=[
-            #                 'node.role == manager',
-            #                 'node.role == worker',
-            #             ],
-            #             env=[
-            #                 'FOO=bar',
-            #                 'FOO2=bar2',
-            #             ],
-            #         ),
-            #     ),
-            #     service_info=dict(),
-            #     expected_args={
-            #         'executable': ['docker', 'service', 'update'],
-            #         'image': 'image_id',
-            #         'replicas': '1',
-            #         'publish-add': ['source:target', 'source2:target2'],
-            #         'mount-add': [
-            #             'type=volume,destination=/path',
-            #             '"type=volume,destination=\\"/path2\\""',
-            #         ],
-            #         'label-add': ['label=value', 'label2=value2'],
-            #         'constraint-add': [
-            #             '"node.role == manager"',
-            #             '"node.role == worker"',
-            #         ],
-            #         'env-add': ['FOO=bar', 'FOO2=bar2'],
-            #         'container-label-add': ['label=value', 'label2=value2'],
-            #         'service': 'service',
-            #     },
-            # ),
-            # remove_option_value=dict(
-            #     init_kwargs=dict(
-            #         name='service',
-            #         image='image:tag',
-            #     ),
-            #     service_info=dict(
-            #         Spec=dict(
-            #             Labels=dict(
-            #                 label='value',
-            #             ),
-            #             TaskTemplate=dict(
-            #                 ContainerSpec=dict(
-            #                     Labels=dict(
-            #                         label='value',
-            #                     ),
-            #                     Env=[
-            #                         'FOO=bar',
-            #                     ],
-            #                     Mounts=[
-            #                         dict(
-            #                             Type='volume',
-            #                             Source='/source',
-            #                             Target='/path',
-            #                         ),
-            #                     ]
-            #                 ),
-            #                 Placement=dict(
-            #                     Constraints=[
-            #                         'node.role == manager',
-            #                     ],
-            #                 ),
-            #             ),
-            #             EndpointSpec=dict(
-            #                 Ports=[
-            #                     dict(
-            #                         TargetPort='target',
-            #                         Protocol='tcp',
-            #                         PublishedPort='source',
-            #                     ),
-            #                 ],
-            #             ),
-            #         ),
-            #     ),
-            #     expected_args={
-            #         'executable': ['docker', 'service', 'update'],
-            #         'image': 'image_id',
-            #         'replicas': '1',
-            #         'publish-rm': ['target'],
-            #         'mount-rm': ['/path'],
-            #         'label-rm': ['label'],
-            #         'env-rm': ['FOO=bar'],
-            #         'constraint-rm': ['"node.role == manager"'],
-            #         'container-label-rm': ['label'],
-            #         'service': 'service',
-            #     },
-            # ),
-            # remove_single_option_value_from_two=dict(
-            #     init_kwargs=dict(
-            #         name='service',
-            #         image='image:tag',
-            #         options=dict(
-            #             ports='source2:target2',
-            #             mounts='type=volume,destination=/path',
-            #             labels='label=value',
-            #             env='FOO=bar',
-            #             constraints='node.role == manager',
-            #             container_labels='label=value',
-            #         ),
-            #     ),
-            #     service_info=dict(
-            #         Spec=dict(
-            #             Labels=dict(
-            #                 label='value',
-            #                 label2='value2',
-            #             ),
-            #             TaskTemplate=dict(
-            #                 ContainerSpec=dict(
-            #                     Labels=dict(
-            #                         label='value',
-            #                         label2='value2',
-            #                     ),
-            #                     Env=[
-            #                         'FOO=bar',
-            #                         'FOO2=bar2',
-            #                     ],
-            #                     Mounts=[
-            #                         dict(
-            #                             Type='volume',
-            #                             Source='/source',
-            #                             Target='/path',
-            #                         ),
-            #                         dict(
-            #                             Type='volume',
-            #                             Source='/source2',
-            #                             Target='/path2',
-            #                         ),
-            #                     ]
-            #                 ),
-            #                 Placement=dict(
-            #                     Constraints=[
-            #                         'node.role == manager',
-            #                         'node.role == worker',
-            #                     ],
-            #                 ),
-            #             ),
-            #             EndpointSpec=dict(
-            #                 Ports=[
-            #                     dict(
-            #                         TargetPort='target',
-            #                         Protocol='tcp',
-            #                         PublishedPort='source',
-            #                     ),
-            #                     dict(
-            #                         TargetPort='target2',
-            #                         Protocol='tcp',
-            #                         PublishedPort='source2',
-            #                     ),
-            #                 ],
-            #             ),
-            #         ),
-            #     ),
-            #     expected_args={
-            #         'executable': ['docker', 'service', 'update'],
-            #         'image': 'image_id',
-            #         'replicas': '1',
-            #         'publish-rm': ['target'],
-            #         'publish-add': ['source2:target2'],
-            #         'mount-rm': ['/path2'],
-            #         'mount-add': ['type=volume,destination=/path'],
-            #         'label-rm': ['label2'],
-            #         'label-add': ['label=value'],
-            #         'env-rm': ['FOO2=bar2'],
-            #         'env-add': ['FOO=bar'],
-            #         'constraint-rm': ['"node.role == worker"'],
-            #         'constraint-add': ['"node.role == manager"'],
-            #         'container-label-rm': ['label2'],
-            #         'container-label-add': ['label=value'],
-            #         'service': 'service',
-            #     },
-            # ),
-            # remove_single_option_value_from_three=dict(
-            #     init_kwargs=dict(
-            #         name='service',
-            #         image='image:tag',
-            #         options=dict(
-            #             ports=[
-            #                 'source2:target2',
-            #                 'source3:target3',
-            #             ],
-            #             mounts=[
-            #                 'type=volume,destination=/path',
-            #                 'type=volume,destination="/path2"',
-            #             ],
-            #             labels=[
-            #                 'label=value',
-            #                 'label2=value2',
-            #             ],
-            #             env=[
-            #                 'FOO=bar',
-            #                 'FOO2=bar2',
-            #             ],
-            #             constraints=[
-            #                 'node.role == manager',
-            #                 'node.role == worker',
-            #             ],
-            #             container_labels=[
-            #                 'label=value',
-            #                 'label2=value2',
-            #             ],
-            #         ),
-            #     ),
-            #     service_info=dict(
-            #         Spec=dict(
-            #             Labels=dict(
-            #                 label='value',
-            #                 label2='value2',
-            #                 label3='value3',
-            #             ),
-            #             TaskTemplate=dict(
-            #                 ContainerSpec=dict(
-            #                     Labels=dict(
-            #                         label='value',
-            #                         label2='value2',
-            #                         label3='value3',
-            #                     ),
-            #                     Env=[
-            #                         'FOO=bar',
-            #                         'FOO2=bar2',
-            #                         'FOO3=bar3',
-            #                     ],
-            #                     Mounts=[
-            #                         dict(
-            #                             Type='volume',
-            #                             Source='/source',
-            #                             Target='/path',
-            #                         ),
-            #                         dict(
-            #                             Type='volume',
-            #                             Source='/source2',
-            #                             Target='/path2',
-            #                         ),
-            #                         dict(
-            #                             Type='volume',
-            #                             Source='/source3',
-            #                             Target='/path3',
-            #                         ),
-            #                     ]
-            #                 ),
-            #                 Placement=dict(
-            #                     Constraints=[
-            #                         'node.role == manager',
-            #                         'node.role == worker',
-            #                         'constraint',
-            #                     ],
-            #                 ),
-            #             ),
-            #             EndpointSpec=dict(
-            #                 Ports=[
-            #                     dict(
-            #                         TargetPort='target',
-            #                         Protocol='tcp',
-            #                         PublishedPort='source',
-            #                     ),
-            #                     dict(
-            #                         TargetPort='target2',
-            #                         Protocol='tcp',
-            #                         PublishedPort='source2',
-            #                     ),
-            #                     dict(
-            #                         TargetPort='target3',
-            #                         Protocol='tcp',
-            #                         PublishedPort='source3',
-            #                     ),
-            #                 ],
-            #             ),
-            #         ),
-            #     ),
-            #     expected_args={
-            #         'executable': ['docker', 'service', 'update'],
-            #         'image': 'image_id',
-            #         'replicas': '1',
-            #         'publish-rm': ['target'],
-            #         'publish-add': ['source2:target2', 'source3:target3'],
-            #         'label-rm': ['label3'],
-            #         'label-add': ['label=value', 'label2=value2'],
-            #         'env-rm': ['FOO3=bar3'],
-            #         'env-add': ['FOO=bar', 'FOO2=bar2'],
-            #         'constraint-rm': ['constraint'],
-            #         'constraint-add': [
-            #             '"node.role == manager"',
-            #             '"node.role == worker"',
-            #         ],
-            #         'container-label-rm': ['label3'],
-            #         'container-label-add': ['label=value', 'label2=value2'],
-            #         'mount-rm': ['/path3'],
-            #         'mount-add': [
-            #             'type=volume,destination=/path',
-            #             '"type=volume,destination=\\"/path2\\""',
-            #         ],
-            #         'service': 'service',
-            #     },
-            # ),
         )
 
         def test_command(command, **kwargs):
@@ -2125,6 +1812,7 @@ class ServiceTestCase(unittest.TestCase):
                         restart_condition='on-failure',
                         stop_timeout=10,
                         custom_option='custom_value',
+                        replicas=3,
                     ),
                 ),
                 service_info=dict(),
@@ -2141,7 +1829,7 @@ class ServiceTestCase(unittest.TestCase):
                     'mount-rm': None,
                     'container-label-rm': None,
                     'user': None,
-                    'replicas': 1,
+                    'replicas': 3,
                     'publish-rm': None,
                     'mount-add': 'type=volume,destination=/path',
                     'constraint-rm': None,
@@ -2149,6 +1837,331 @@ class ServiceTestCase(unittest.TestCase):
                     'restart-condition': 'on-failure',
                     'custom_option': 'custom_value',
                     'container-label-add': 'label=value',
+                },
+            ),
+            new_options_values=dict(
+                init_kwargs=dict(
+                    name='service',
+                    image='image:tag',
+                    options=dict(
+                        ports=[
+                            'source:target',
+                            'source2:target2',
+                        ],
+                        mounts=[
+                            'type=volume,destination=/path',
+                            'type=volume,destination="/path2"',
+                        ],
+                        labels=[
+                            'label=value',
+                            'label2=value2',
+                        ],
+                        container_labels=[
+                            'label=value',
+                            'label2=value2',
+                        ],
+                        constraints=[
+                            'node.role == manager',
+                            'node.role == worker',
+                        ],
+                        env=[
+                            'FOO=bar',
+                            'FOO2=bar2',
+                        ],
+                    ),
+                ),
+                service_info=dict(),
+                expected={
+                    'env-add': ['FOO=bar', 'FOO2=bar2'],
+                    'constraint-add': ['node.role == manager', 'node.role == worker'],
+                    'label-rm': None,
+                    'network': None,
+                    'env-rm': None,
+                    'publish-add': ['source:target', 'source2:target2'],
+                    'label-add': ['label=value', 'label2=value2'],
+                    'image': 'digest',
+                    'args': None,
+                    'mount-rm': None,
+                    'container-label-rm': None,
+                    'user': None,
+                    'replicas': 1,
+                    'publish-rm': None,
+                    'mount-add': ['type=volume,destination=/path', 'type=volume,destination="/path2"'],
+                    'constraint-rm': None,
+                    'stop-grace-period': None,
+                    'restart-condition': None,
+                    'container-label-add': ['label=value', 'label2=value2'],
+                },
+            ),
+            remove_option_value=dict(
+                init_kwargs=dict(
+                    name='service',
+                    image='image:tag',
+                ),
+                service_info=dict(
+                    Spec=dict(
+                        Labels=dict(
+                            label='value',
+                        ),
+                        TaskTemplate=dict(
+                            ContainerSpec=dict(
+                                Labels=dict(
+                                    label='value',
+                                ),
+                                Env=[
+                                    'FOO=bar',
+                                ],
+                                Mounts=[
+                                    dict(
+                                        Type='volume',
+                                        Source='/source',
+                                        Target='/path',
+                                    ),
+                                ]
+                            ),
+                            Placement=dict(
+                                Constraints=[
+                                    'node.role == manager',
+                                ],
+                            ),
+                        ),
+                        EndpointSpec=dict(
+                            Ports=[
+                                dict(
+                                    TargetPort='target',
+                                    Protocol='tcp',
+                                    PublishedPort='source',
+                                ),
+                            ],
+                        ),
+                    ),
+                ),
+                expected={
+                    'env-add': None,
+                    'constraint-add': None,
+                    'label-rm': set(['label']),
+                    'network': None,
+                    'env-rm': set(['FOO=bar']),
+                    'publish-add': None,
+                    'label-add': None,
+                    'image': 'digest',
+                    'args': None,
+                    'mount-rm': set(['/path']),
+                    'container-label-rm': set(['label']),
+                    'user': None,
+                    'replicas': 1,
+                    'publish-rm': set(['target']),
+                    'mount-add': None,
+                    'constraint-rm': set(['node.role == manager']),
+                    'stop-grace-period': None,
+                    'restart-condition': None,
+                    'container-label-add': None,
+                },
+            ),
+            remove_single_option_value_from_two=dict(
+                init_kwargs=dict(
+                    name='service',
+                    image='image:tag',
+                    options=dict(
+                        ports='source2:target2',
+                        mounts='type=volume,destination=/path',
+                        labels='label=value',
+                        env='FOO=bar',
+                        constraints='node.role == manager',
+                        container_labels='label=value',
+                    ),
+                ),
+                service_info=dict(
+                    Spec=dict(
+                        Labels=dict(
+                            label='value',
+                            label2='value2',
+                        ),
+                        TaskTemplate=dict(
+                            ContainerSpec=dict(
+                                Labels=dict(
+                                    label='value',
+                                    label2='value2',
+                                ),
+                                Env=[
+                                    'FOO=bar',
+                                    'FOO2=bar2',
+                                ],
+                                Mounts=[
+                                    dict(
+                                        Type='volume',
+                                        Source='/source',
+                                        Target='/path',
+                                    ),
+                                    dict(
+                                        Type='volume',
+                                        Source='/source2',
+                                        Target='/path2',
+                                    ),
+                                ]
+                            ),
+                            Placement=dict(
+                                Constraints=[
+                                    'node.role == manager',
+                                    'node.role == worker',
+                                ],
+                            ),
+                        ),
+                        EndpointSpec=dict(
+                            Ports=[
+                                dict(
+                                    TargetPort='target',
+                                    Protocol='tcp',
+                                    PublishedPort='source',
+                                ),
+                                dict(
+                                    TargetPort='target2',
+                                    Protocol='tcp',
+                                    PublishedPort='source2',
+                                ),
+                            ],
+                        ),
+                    ),
+                ),
+                expected={
+                    'env-add': 'FOO=bar',
+                    'constraint-add': 'node.role == manager',
+                    'label-rm': set(['label2']),
+                    'network': None,
+                    'env-rm': set(['FOO2=bar2']),
+                    'publish-add': 'source2:target2',
+                    'label-add': 'label=value',
+                    'image': 'digest',
+                    'args': None,
+                    'mount-rm': set(['/path2']),
+                    'container-label-rm': set(['label2']),
+                    'user': None,
+                    'replicas': 1,
+                    'publish-rm': set(['target']),
+                    'mount-add': 'type=volume,destination=/path',
+                    'constraint-rm': set(['node.role == worker']),
+                    'stop-grace-period': None,
+                    'restart-condition': None,
+                    'container-label-add': 'label=value',
+                },
+            ),
+            remove_single_option_value_from_three=dict(
+                init_kwargs=dict(
+                    name='service',
+                    image='image:tag',
+                    options=dict(
+                        ports=[
+                            'source2:target2',
+                            'source3:target3',
+                        ],
+                        mounts=[
+                            'type=volume,destination=/path',
+                            'type=volume,destination="/path2"',
+                        ],
+                        labels=[
+                            'label=value',
+                            'label2=value2',
+                        ],
+                        env=[
+                            'FOO=bar',
+                            'FOO2=bar2',
+                        ],
+                        constraints=[
+                            'node.role == manager',
+                            'node.role == worker',
+                        ],
+                        container_labels=[
+                            'label=value',
+                            'label2=value2',
+                        ],
+                    ),
+                ),
+                service_info=dict(
+                    Spec=dict(
+                        Labels=dict(
+                            label='value',
+                            label2='value2',
+                            label3='value3',
+                        ),
+                        TaskTemplate=dict(
+                            ContainerSpec=dict(
+                                Labels=dict(
+                                    label='value',
+                                    label2='value2',
+                                    label3='value3',
+                                ),
+                                Env=[
+                                    'FOO=bar',
+                                    'FOO2=bar2',
+                                    'FOO3=bar3',
+                                ],
+                                Mounts=[
+                                    dict(
+                                        Type='volume',
+                                        Source='/source',
+                                        Target='/path',
+                                    ),
+                                    dict(
+                                        Type='volume',
+                                        Source='/source2',
+                                        Target='/path2',
+                                    ),
+                                    dict(
+                                        Type='volume',
+                                        Source='/source3',
+                                        Target='/path3',
+                                    ),
+                                ]
+                            ),
+                            Placement=dict(
+                                Constraints=[
+                                    'node.role == manager',
+                                    'node.role == worker',
+                                    'constraint',
+                                ],
+                            ),
+                        ),
+                        EndpointSpec=dict(
+                            Ports=[
+                                dict(
+                                    TargetPort='target',
+                                    Protocol='tcp',
+                                    PublishedPort='source',
+                                ),
+                                dict(
+                                    TargetPort='target2',
+                                    Protocol='tcp',
+                                    PublishedPort='source2',
+                                ),
+                                dict(
+                                    TargetPort='target3',
+                                    Protocol='tcp',
+                                    PublishedPort='source3',
+                                ),
+                            ],
+                        ),
+                    ),
+                ),
+                expected={
+                    'env-add': ['FOO=bar', 'FOO2=bar2'],
+                    'constraint-add': ['node.role == manager', 'node.role == worker'],
+                    'label-rm': set(['label3']),
+                    'network': None,
+                    'env-rm': set(['FOO3=bar3']),
+                    'publish-add': ['source2:target2', 'source3:target3'],
+                    'label-add': ['label=value', 'label2=value2'],
+                    'image': 'digest',
+                    'args': None,
+                    'mount-rm': set(['/path3']),
+                    'container-label-rm': set(['label3']),
+                    'user': None,
+                    'replicas': 1,
+                    'publish-rm': set(['target']),
+                    'mount-add': ['type=volume,destination=/path', 'type=volume,destination="/path2"'],
+                    'constraint-rm': set(['constraint']),
+                    'stop-grace-period': None,
+                    'restart-condition': None,
+                    'container-label-add': ['label=value', 'label2=value2'],
                 },
             ),
         )
@@ -2162,7 +2175,6 @@ class ServiceTestCase(unittest.TestCase):
                     __delete__=lambda *_: None,
                 ):
                     service = docker.Service(**data['init_kwargs'])
-                    # print(case, dict(service.update_options))
                     self.assertDictEqual(
                         dict(service.update_options),
                         data['expected'],
