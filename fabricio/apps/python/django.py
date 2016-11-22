@@ -73,12 +73,15 @@ class DjangoContainer(docker.Container):
                 return revert_migrations.values()
 
     def migrate_back(self):
-        migrations_command = 'python manage.py showmigrations --plan | egrep "^\[X\]" | awk "{print \$2}"'
+        migrations_command = 'python manage.py showmigrations --plan ' \
+                             '| egrep "^\[X\]" ' \
+                             '| awk "{print \$2}"'
+        image = self.image
 
         backup_container = self.get_backup_container()
         options = self.safe_options
 
-        current_migrations = self.image.run(
+        current_migrations = image.run(
             command=migrations_command,
             options=options,
         )
@@ -92,8 +95,10 @@ class DjangoContainer(docker.Container):
         )
 
         for migration in revert_migrations:
-            command = 'python manage.py migrate --no-input {app} {migration}'.format(
+            command = (
+                'python manage.py migrate --no-input {app} {migration}'
+            ).format(
                 app=migration.app,
                 migration=migration.name,
             )
-            self.image.run(command=command, quiet=False, options=options)
+            image.run(command=command, quiet=False, options=options)

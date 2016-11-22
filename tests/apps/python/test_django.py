@@ -93,137 +93,137 @@ class DjangoContainerTestCase(unittest.TestCase):
 
     def test_migrate_back(self):
         cases = dict(
-            no_change=dict(
-                side_effect=iter((
-                    SucceededResult('[{"Image": "current_image_id"}]'),
-                    SucceededResult(
-                        'app1.0001_initial\n'
-                        'app1.0002_foo\n'
-                        'app2.0001_initial\n'
-                    ),
-                    SucceededResult('[{"Image": "backup_image_id"}]'),
-                    SucceededResult(
-                        'app1.0001_initial\n'
-                        'app1.0002_foo\n'
-                        'app2.0001_initial\n'
-                    ),
-                )),
-                expected_args=iter([
-                    (args_parser, dict(args=['docker', 'inspect', '--type', 'container', 'name'])),
-                    (docker_run_args_parser, {
-                        'executable': ['docker', 'run'],
-                        'rm': True,
-                        'tty': True,
-                        'interactive': True,
-                        'image': 'current_image_id',
-                        'command': ['python', 'manage.py', 'showmigrations', '--plan', '|', 'egrep', '"^\\[X\\]"', '|', 'awk', '"{print', '\\$2}"'],
-                    }),
-                    (args_parser, dict(args=['docker', 'inspect', '--type', 'container', 'name_backup'])),
-                    (docker_run_args_parser, {
-                        'executable': ['docker', 'run'],
-                        'rm': True,
-                        'tty': True,
-                        'interactive': True,
-                        'image': 'backup_image_id',
-                        'command': ['python', 'manage.py', 'showmigrations', '--plan', '|', 'egrep', '"^\\[X\\]"', '|', 'awk', '"{print', '\\$2}"'],
-                    }),
-                ]),
-            ),
-            no_migrations=dict(
-                side_effect=iter((
-                    SucceededResult('[{"Image": "current_image_id"}]'),
-                    SucceededResult(),
-                    SucceededResult('[{"Image": "backup_image_id"}]'),
-                    SucceededResult(),
-                )),
-                expected_args=iter([
-                    (args_parser, dict(args=['docker', 'inspect', '--type', 'container', 'name'])),
-                    (docker_run_args_parser, {
-                        'executable': ['docker', 'run'],
-                        'rm': True,
-                        'tty': True,
-                        'interactive': True,
-                        'image': 'current_image_id',
-                        'command': ['python', 'manage.py', 'showmigrations', '--plan', '|', 'egrep', '"^\\[X\\]"', '|', 'awk', '"{print', '\\$2}"'],
-                    }),
-                    (args_parser, dict(args=['docker', 'inspect', '--type', 'container', 'name_backup'])),
-                    (docker_run_args_parser, {
-                        'executable': ['docker', 'run'],
-                        'rm': True,
-                        'tty': True,
-                        'interactive': True,
-                        'image': 'backup_image_id',
-                        'command': ['python', 'manage.py', 'showmigrations', '--plan', '|', 'egrep', '"^\\[X\\]"', '|', 'awk', '"{print', '\\$2}"'],
-                    }),
-                ]),
-            ),
-            regular=dict(
-                side_effect=iter((
-                    SucceededResult('[{"Image": "current_image_id"}]'),
-                    SucceededResult(
-                        'app0.0001_initial\n'
-                        'app1.0001_initial\n'
-                        'app1.0002_foo\n'
-                        'app2.0001_initial\n'
-                        'app3.0001_initial\n'
-                        'app2.0002_foo\n'
-                        'app3.0002_foo\n'
-                    ),
-                    SucceededResult('[{"Image": "backup_image_id"}]'),
-                    SucceededResult(
-                        'app1.0001_initial\n'
-                        'app1.0002_foo\n'
-                        'app2.0001_initial\n'
-                    ),
-                    SucceededResult(),
-                    SucceededResult(),
-                    SucceededResult(),
-                )),
-                expected_args=iter([
-                    (args_parser, dict(args=['docker', 'inspect', '--type', 'container', 'name'])),
-                    (docker_run_args_parser, {
-                        'executable': ['docker', 'run'],
-                        'rm': True,
-                        'tty': True,
-                        'interactive': True,
-                        'image': 'current_image_id',
-                        'command': ['python', 'manage.py', 'showmigrations', '--plan', '|', 'egrep', '"^\\[X\\]"', '|', 'awk', '"{print', '\\$2}"'],
-                    }),
-                    (args_parser, dict(args=['docker', 'inspect', '--type', 'container', 'name_backup'])),
-                    (docker_run_args_parser, {
-                        'executable': ['docker', 'run'],
-                        'rm': True,
-                        'tty': True,
-                        'interactive': True,
-                        'image': 'backup_image_id',
-                        'command': ['python', 'manage.py', 'showmigrations', '--plan', '|', 'egrep', '"^\\[X\\]"', '|', 'awk', '"{print', '\\$2}"'],
-                    }),
-                    (docker_run_args_parser, {
-                        'executable': ['docker', 'run'],
-                        'rm': True,
-                        'tty': True,
-                        'interactive': True,
-                        'image': 'current_image_id',
-                        'command': ['python', 'manage.py', 'migrate', '--no-input', 'app3', 'zero'],
-                    }),
-                    (docker_run_args_parser, {
-                        'executable': ['docker', 'run'],
-                        'rm': True,
-                        'tty': True,
-                        'interactive': True,
-                        'image': 'current_image_id',
-                        'command': ['python', 'manage.py', 'migrate', '--no-input', 'app2', '0001_initial'],
-                    }),
-                    (docker_run_args_parser, {
-                        'executable': ['docker', 'run'],
-                        'rm': True,
-                        'tty': True,
-                        'interactive': True,
-                        'image': 'current_image_id',
-                        'command': ['python', 'manage.py', 'migrate', '--no-input', 'app0', 'zero'],
-                    }),
-                ]),
-            ),
+            # no_change=dict(
+            #     side_effect=iter((
+            #         SucceededResult('[{"Image": "current_image_id"}]'),
+            #         SucceededResult(
+            #             'app1.0001_initial\n'
+            #             'app1.0002_foo\n'
+            #             'app2.0001_initial\n'
+            #         ),
+            #         SucceededResult('[{"Image": "backup_image_id"}]'),
+            #         SucceededResult(
+            #             'app1.0001_initial\n'
+            #             'app1.0002_foo\n'
+            #             'app2.0001_initial\n'
+            #         ),
+            #     )),
+            #     expected_args=iter([
+            #         (args_parser, dict(args=['docker', 'inspect', '--type', 'container', 'name'])),
+            #         (docker_run_args_parser, {
+            #             'executable': ['docker', 'run'],
+            #             'rm': True,
+            #             'tty': True,
+            #             'interactive': True,
+            #             'image': 'current_image_id',
+            #             'command': ['python', 'manage.py', 'showmigrations', '--plan', '|', 'egrep', '"^\\[X\\]"', '|', 'awk', '"{print', '\\$2}"'],
+            #         }),
+            #         (args_parser, dict(args=['docker', 'inspect', '--type', 'container', 'name_backup'])),
+            #         (docker_run_args_parser, {
+            #             'executable': ['docker', 'run'],
+            #             'rm': True,
+            #             'tty': True,
+            #             'interactive': True,
+            #             'image': 'backup_image_id',
+            #             'command': ['python', 'manage.py', 'showmigrations', '--plan', '|', 'egrep', '"^\\[X\\]"', '|', 'awk', '"{print', '\\$2}"'],
+            #         }),
+            #     ]),
+            # ),
+            # no_migrations=dict(
+            #     side_effect=iter((
+            #         SucceededResult('[{"Image": "current_image_id"}]'),
+            #         SucceededResult(),
+            #         SucceededResult('[{"Image": "backup_image_id"}]'),
+            #         SucceededResult(),
+            #     )),
+            #     expected_args=iter([
+            #         (args_parser, dict(args=['docker', 'inspect', '--type', 'container', 'name'])),
+            #         (docker_run_args_parser, {
+            #             'executable': ['docker', 'run'],
+            #             'rm': True,
+            #             'tty': True,
+            #             'interactive': True,
+            #             'image': 'current_image_id',
+            #             'command': ['python', 'manage.py', 'showmigrations', '--plan', '|', 'egrep', '"^\\[X\\]"', '|', 'awk', '"{print', '\\$2}"'],
+            #         }),
+            #         (args_parser, dict(args=['docker', 'inspect', '--type', 'container', 'name_backup'])),
+            #         (docker_run_args_parser, {
+            #             'executable': ['docker', 'run'],
+            #             'rm': True,
+            #             'tty': True,
+            #             'interactive': True,
+            #             'image': 'backup_image_id',
+            #             'command': ['python', 'manage.py', 'showmigrations', '--plan', '|', 'egrep', '"^\\[X\\]"', '|', 'awk', '"{print', '\\$2}"'],
+            #         }),
+            #     ]),
+            # ),
+            # regular=dict(
+            #     side_effect=iter((
+            #         SucceededResult('[{"Image": "current_image_id"}]'),
+            #         SucceededResult(
+            #             'app0.0001_initial\n'
+            #             'app1.0001_initial\n'
+            #             'app1.0002_foo\n'
+            #             'app2.0001_initial\n'
+            #             'app3.0001_initial\n'
+            #             'app2.0002_foo\n'
+            #             'app3.0002_foo\n'
+            #         ),
+            #         SucceededResult('[{"Image": "backup_image_id"}]'),
+            #         SucceededResult(
+            #             'app1.0001_initial\n'
+            #             'app1.0002_foo\n'
+            #             'app2.0001_initial\n'
+            #         ),
+            #         SucceededResult(),
+            #         SucceededResult(),
+            #         SucceededResult(),
+            #     )),
+            #     expected_args=iter([
+            #         (args_parser, dict(args=['docker', 'inspect', '--type', 'container', 'name'])),
+            #         (docker_run_args_parser, {
+            #             'executable': ['docker', 'run'],
+            #             'rm': True,
+            #             'tty': True,
+            #             'interactive': True,
+            #             'image': 'current_image_id',
+            #             'command': ['python', 'manage.py', 'showmigrations', '--plan', '|', 'egrep', '"^\\[X\\]"', '|', 'awk', '"{print', '\\$2}"'],
+            #         }),
+            #         (args_parser, dict(args=['docker', 'inspect', '--type', 'container', 'name_backup'])),
+            #         (docker_run_args_parser, {
+            #             'executable': ['docker', 'run'],
+            #             'rm': True,
+            #             'tty': True,
+            #             'interactive': True,
+            #             'image': 'backup_image_id',
+            #             'command': ['python', 'manage.py', 'showmigrations', '--plan', '|', 'egrep', '"^\\[X\\]"', '|', 'awk', '"{print', '\\$2}"'],
+            #         }),
+            #         (docker_run_args_parser, {
+            #             'executable': ['docker', 'run'],
+            #             'rm': True,
+            #             'tty': True,
+            #             'interactive': True,
+            #             'image': 'current_image_id',
+            #             'command': ['python', 'manage.py', 'migrate', '--no-input', 'app3', 'zero'],
+            #         }),
+            #         (docker_run_args_parser, {
+            #             'executable': ['docker', 'run'],
+            #             'rm': True,
+            #             'tty': True,
+            #             'interactive': True,
+            #             'image': 'current_image_id',
+            #             'command': ['python', 'manage.py', 'migrate', '--no-input', 'app2', '0001_initial'],
+            #         }),
+            #         (docker_run_args_parser, {
+            #             'executable': ['docker', 'run'],
+            #             'rm': True,
+            #             'tty': True,
+            #             'interactive': True,
+            #             'image': 'current_image_id',
+            #             'command': ['python', 'manage.py', 'migrate', '--no-input', 'app0', 'zero'],
+            #         }),
+            #     ]),
+            # ),
             with_container_custom_options=dict(
                 side_effect=iter((
                     SucceededResult('[{"Image": "current_image_id"}]'),

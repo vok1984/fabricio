@@ -47,6 +47,7 @@ class Image(object):
     def __get__(self, container, owner_cls):
         if container is None:
             return self
+        # TODO every time new instance of image?
         field_name = self.get_field_name(owner_cls)
         image = container.__dict__.get(field_name)
         if image is None:
@@ -68,6 +69,10 @@ class Image(object):
             self.__class__(image)
         )
 
+    def __delete__(self, container):
+        field_name = self.get_field_name(type(container))
+        container.__dict__.pop(field_name, None)
+
     def __getitem__(self, item):
         if isinstance(item, slice):
             registry, tag = item.start, item.stop
@@ -83,6 +88,7 @@ class Image(object):
         raise TypeError
 
     def get_field_name(self, owner_cls):
+        # TODO think about result cache
         field_name = self.field_names.get(owner_cls)
         if field_name is None:
             for attr in dir(owner_cls):
@@ -135,22 +141,17 @@ class Image(object):
         )
         return json.loads(str(info))[0]
 
-    # @utils.host_cached_property
-    @property  # TODO think about this
-    def _container_image_id(self):
-        return self.container.info['Image']
-
     @property
     def id(self):
         if self.container is None:
             return self.info['Id']
-        return self._container_image_id
+        return self.container.info['Image']
 
     def get_delete_callback(self, force=False):
         command = 'docker rmi {force}{image}'
         force = force and '--force ' or ''
         return functools.partial(
-            fabricio.run,  # TODO del self.info
+            fabricio.run,
             command.format(image=self, force=force),
             ignore_errors=True,
         )
