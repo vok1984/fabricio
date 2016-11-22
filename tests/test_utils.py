@@ -1,6 +1,7 @@
-from datetime import time
-
+import mock
 import unittest2 as unittest
+
+from fabric import api as fab
 
 from fabricio import docker, utils
 
@@ -9,7 +10,6 @@ class OptionsTestCase(unittest.TestCase):
 
     def test_str_version(self):
         cases = dict(
-            # TODO all values must be quoted
             empty_options_list=dict(
                 options=utils.OrderedDict(),
                 expected_str_version='',
@@ -74,11 +74,38 @@ class OptionsTestCase(unittest.TestCase):
                 ]),
                 expected_str_version='--foo foo --bar --baz 1 --baz a',
             ),
-            # TODO empty value
-            # TODO escaped value
         )
         for case, params in cases.items():
             with self.subTest(case=case):
                 options = utils.Options(params['options'])
                 expected_str_version = params['expected_str_version']
                 self.assertEqual(expected_str_version, str(options))
+
+
+class UtilsTestCase(unittest.TestCase):
+
+    def test_host_cached_property(self):
+        mocked_method = mock.Mock()
+        mocked_method.__name__ = 'method'
+
+        class _Test(object):
+            method = utils.host_cached_property(mocked_method)
+
+        obj = _Test()
+        del obj.method
+
+        fab.env.host = 'host1'
+        obj.method
+        obj.method
+        self.assertEqual(mocked_method.call_count, 1)
+
+        fab.env.host = 'host2'
+        obj.method
+        obj.method
+        self.assertEqual(mocked_method.call_count, 2)
+
+        fab.env.host = 'host3'
+        obj.method = 'value'
+        obj.method
+        obj.method
+        self.assertEqual(mocked_method.call_count, 2)

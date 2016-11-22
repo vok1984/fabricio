@@ -11,13 +11,21 @@ except ImportError:
 
 import six
 
+from cached_property import cached_property
+from fabric import api as fab
+
+DEFAULT = object()
+
 
 @contextlib.contextmanager
-def patch(obj, attr, value, default=None):
-    original = getattr(obj, attr, default)
+def patch(obj, attr, value, default=DEFAULT, force_delete=False):
+    original = not force_delete and getattr(obj, attr, default)
     setattr(obj, attr, value)
     yield
-    setattr(obj, attr, original)
+    if force_delete or original is DEFAULT:
+        obj.__delattr__(attr)
+    else:
+        setattr(obj, attr, original)
 
 
 class default_property(object):
@@ -95,3 +103,25 @@ class Item(six.text_type):
 
     def get_comparison_value(self):
         raise NotImplementedError
+
+
+class host_cached_property(cached_property):
+
+    def __get__(self, obj, cls):
+        if obj is None:
+            return self
+        hosts = self.hosts(obj)
+        try:
+            return hosts[fab.env.host]
+        except KeyError:
+            value = hosts[fab.env.host] = self.func(obj)
+        return value
+
+    def __set__(self, obj, value):
+        self.hosts(obj)[fab.env.host] = value
+
+    def __delete__(self, obj):
+        self.hosts(obj).pop(fab.env.host, None)
+
+    def hosts(self, obj):
+        return obj.__dict__.setdefault(self.func.__name__, {})

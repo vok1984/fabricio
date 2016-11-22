@@ -3,7 +3,6 @@ import functools
 import json
 import re
 import sys
-import uuid
 
 import dpath
 import six
@@ -201,22 +200,22 @@ class Service(BaseService):
 
     @property
     def update_options(self):
-        return frozendict(
-            (
-                (option, callback(self))
-                for option, callback in self._update_options.items()
-            ),
-            image=self.image.digest,
-            args=self.args,
-            **self._additional_options
-        )
+        with utils.patch(self, 'info', self.info, force_delete=True):
+            return frozendict(
+                [
+                    (option, callback(self))
+                    for option, callback in self._update_options.items()
+                ],
+                image=self.image.digest,
+                args=self.args,
+                **self._additional_options
+            )
 
     def _update(self):
         fabricio.run('docker service update {options} {service}'.format(
             options=utils.Options(self.update_options),
             service=self,
         ))
-        self._reset_cache_key()  # reset any cache after service update
 
     def _create(self):
         pass  # TODO
@@ -241,7 +240,7 @@ class Service(BaseService):
         return True
 
     def revert(self):
-        pass  # TODO
+        pass # TODO finish implementation
 
     def pull_image(self, tag=None, registry=None):
         try:
@@ -277,23 +276,11 @@ class Service(BaseService):
         if self.is_leader():
             self.sentinel.restore(backup_name=backup_name)
 
-    @cached_property
-    def _cache_key(self):
-        return uuid.uuid4().bytes
-
-    def _reset_cache_key(self):
-        try:
-            del self._cache_key
-        except AttributeError:
-            pass
-
-    @property
+    @utils.default_property
     def info(self):
         command = 'docker service inspect {service}'
         info = fabricio.run(
             command.format(service=self),
-            use_cache=True,
-            cache_key=self._cache_key,
             abort_exception=ServiceNotFoundError,
         )
         return json.loads(info)[0]

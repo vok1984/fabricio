@@ -2,12 +2,11 @@ import functools
 import json
 import warnings
 
-from cached_property import cached_property
 from docker import utils as docker_utils, auth as docker_auth
 
 import fabricio
 
-from fabricio.utils import Options
+from fabricio import utils
 
 from .registry import Registry
 
@@ -91,7 +90,7 @@ class Image(object):
                     if field_name is not None:
                         raise ValueError(
                             'Same instance of Image used for more than one '
-                            'attributes of class {cls}'.format(
+                            'attribute of class {cls}'.format(
                                 cls=owner_cls.__name__,
                             )
                         )
@@ -111,7 +110,7 @@ class Image(object):
         additional_options = temporary and {
             'restart': None,  # temporary containers can't be restarted
         } or {}
-        return Options(
+        return utils.Options(
             options,
             name=name,
             rm=temporary,
@@ -136,17 +135,22 @@ class Image(object):
         )
         return json.loads(str(info))[0]
 
-    @cached_property
+    # @utils.host_cached_property
+    @property  # TODO think about this
+    def _container_image_id(self):
+        return self.container.info['Image']
+
+    @property
     def id(self):
         if self.container is None:
             return self.info['Id']
-        return self.container.info['Image']
+        return self._container_image_id
 
     def get_delete_callback(self, force=False):
         command = 'docker rmi {force}{image}'
         force = force and '--force ' or ''
         return functools.partial(
-            fabricio.run,
+            fabricio.run,  # TODO del self.info
             command.format(image=self, force=force),
             ignore_errors=True,
         )

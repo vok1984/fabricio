@@ -1,3 +1,4 @@
+import collections
 import mock
 import re
 import unittest2 as unittest
@@ -10,7 +11,7 @@ from fabricio import docker
 from fabricio.docker.container import Option, Attribute
 from tests import SucceededResult, docker_run_args_parser, \
     docker_service_update_args_parser, FailedResult, \
-    docker_node_inspect_args_parser
+    docker_entity_inspect_args_parser, docker_inspect_args_parser
 
 
 class TestContainer(docker.Container):
@@ -1577,12 +1578,6 @@ class ServiceTestCase(unittest.TestCase):
         fabricio.run.cache.clear()
         self.fab_settings.__exit__(None, None, None)
 
-    @mock.patch.object(
-        docker.Container,
-        'info',
-        new_callable=mock.PropertyMock,
-        return_value=dict(Image='image_id'),
-    )
     def test_update(self, *args):
         cases = dict(
             worker=dict(
@@ -1595,7 +1590,7 @@ class ServiceTestCase(unittest.TestCase):
                     FailedResult(),
                 ),
                 args_parsers=[
-                    docker_node_inspect_args_parser,
+                    docker_entity_inspect_args_parser,
                 ],
                 expected_args=[
                     {
@@ -1614,10 +1609,10 @@ class ServiceTestCase(unittest.TestCase):
                 ),
                 update_kwargs=dict(),
                 side_effect=(
-                    SucceededResult('[{"ManagerStatus": {"Leader": false}}]'),
+                    SucceededResult('false'),
                 ),
                 args_parsers=[
-                    docker_node_inspect_args_parser,
+                    docker_entity_inspect_args_parser,
                 ],
                 expected_args=[
                     {
@@ -1636,16 +1631,66 @@ class ServiceTestCase(unittest.TestCase):
                 ),
                 update_kwargs=dict(),
                 side_effect=(
-                    SucceededResult('[{"ManagerStatus": {"Leader": false}}]'),
+                    SucceededResult('false'),
                 ),
                 args_parsers=[
-                    docker_node_inspect_args_parser,
+                    docker_entity_inspect_args_parser,
                 ],
                 expected_args=[
                     {
                         'executable': ['docker', 'node', 'inspect'],
                         'format': "'{{.ManagerStatus.Leader}}'",
                         'service': 'self',
+                    },
+                ],
+                expected_result=True,
+                container_updated=True,
+            ),
+            default=dict(
+                init_kwargs=dict(
+                    name='service',
+                    image='image:tag',
+                ),
+                update_kwargs=dict(),
+                side_effect=(
+                    SucceededResult('true'),  # leader status
+                    SucceededResult('[{}]'),  # service info
+                    SucceededResult('[{"Image": "image_id"}]'),  # container info
+                    SucceededResult('[{"RepoDigests": ["digest"]}]'),  # image info
+                    SucceededResult(),  # service update
+                ),
+                args_parsers=[
+                    docker_entity_inspect_args_parser,
+                    docker_entity_inspect_args_parser,
+                    docker_inspect_args_parser,
+                    docker_inspect_args_parser,
+                    docker_service_update_args_parser,
+                ],
+                expected_args=[
+                    {
+                        'executable': ['docker', 'node', 'inspect'],
+                        'format': "'{{.ManagerStatus.Leader}}'",
+                        'service': 'self',
+                    },
+                    {
+                        'executable': ['docker', 'service', 'inspect'],
+                        'service': 'service',
+                    },
+                    {
+                        'executable': ['docker', 'inspect'],
+                        'type': 'container',
+                        'image_or_container': 'service',
+                    },
+                    {
+                        'executable': ['docker', 'inspect'],
+                        'type': 'image',
+                        'image_or_container': 'image_id',
+                    },
+                    {
+                        'executable': ['docker', 'service', 'update'],
+                        'image': 'digest',
+                        'replicas': '1',
+                        'service': 'service',
                     },
                 ],
                 expected_result=True,
@@ -2042,23 +2087,9 @@ class ServiceTestCase(unittest.TestCase):
                         self.assertEqual(result, data['expected_result'])
                         self.assertEqual(run.call_count, len(data['expected_args']))
 
-    def test_info(self):
-        with fab.settings(fab.hide('everything')):
-            with mock.patch.object(
-                fab,
-                'run',
-                return_value=SucceededResult('[{"foo": "bar"}]'),
-            ) as run:
-                run.__name__ = 'mocked_run'
-                service = docker.Service(name='service')
-
-                self.assertDictEqual(service.info, dict(foo='bar'))
-                self.assertEqual(run.call_count, 1)
-                self.assertDictEqual(service.info, dict(foo='bar'))
-                self.assertEqual(run.call_count, 1)
-
-                service._reset_cache_key()
-                self.assertDictEqual(service.info, dict(foo='bar'))
-                self.assertEqual(run.call_count, 2)
-                self.assertDictEqual(service.info, dict(foo='bar'))
-                self.assertEqual(run.call_count, 2)
+    @mock.patch.object(docker.Image, 'digest', new_callable=mock.PropertyMock)
+    @mock.patch.object(fabricio, 'run', return_value=SucceededResult('[{}]'))
+    def test_update_options(self, *args):
+        service = docker.Service(name='service')
+        self.assertIsInstance(service.update_options, collections.Mapping)
+        self.assertNotIn('info', service.__dict__)

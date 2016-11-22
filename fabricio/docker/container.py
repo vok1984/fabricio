@@ -184,7 +184,7 @@ class Container(BaseService):
                     if run:
                         self.start()  # force starting container
                     return False
-        new_container = self.fork(name=self.name)
+        new_container = self.fork()
         obsolete_container = self.get_backup_container()
         try:
             obsolete_container.delete(delete_image=True)
