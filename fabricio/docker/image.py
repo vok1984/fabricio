@@ -2,6 +2,7 @@ import functools
 import json
 import warnings
 
+from cached_property import cached_property
 from docker import utils as docker_utils, auth as docker_auth
 
 import fabricio
@@ -59,6 +60,12 @@ class Image(object):
         # this cause circular reference between container and image, but it
         # isn't an issue due to a temporary nature of Fabric runtime
         image.container = container
+
+        try:
+            del self._container_image_id
+        except AttributeError:
+            pass
+
         return image
 
     def __set__(self, container, image):
@@ -141,11 +148,15 @@ class Image(object):
         )
         return json.loads(str(info))[0]
 
+    @cached_property
+    def _container_image_id(self):
+        return self.container.info['Image']
+
     @property
     def id(self):
         if self.container is None:
             return self.info['Id']
-        return self.container.info['Image']
+        return self._container_image_id
 
     def get_delete_callback(self, force=False):
         command = 'docker rmi {force}{image}'
