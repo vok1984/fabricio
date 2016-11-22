@@ -48,7 +48,6 @@ class Image(object):
     def __get__(self, container, owner_cls):
         if container is None:
             return self
-        # TODO every time new instance of image?
         field_name = self.get_field_name(owner_cls)
         image = container.__dict__.get(field_name)
         if image is None:
@@ -57,11 +56,15 @@ class Image(object):
                 tag=self.tag,
                 registry=self.registry,
             )
-        # this cause circular reference between container and image, but it
+
+        # this causes circular reference between container and image, but it
         # isn't an issue due to a temporary nature of Fabric runtime
         image.container = container
 
         try:
+            # clear image id cache every time image was accessed from
+            # container instance (this is because of container may change its
+            # image id at any time, but we always want to know fresh one)
             del image._container_image_id
         except AttributeError:
             pass
