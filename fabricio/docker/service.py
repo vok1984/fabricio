@@ -240,7 +240,7 @@ class Service(BaseService):
         return True
 
     def revert(self):
-        pass # TODO finish implementation
+        pass  # TODO finish implementation
 
     def pull_image(self, tag=None, registry=None):
         try:

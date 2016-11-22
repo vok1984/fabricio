@@ -1712,59 +1712,6 @@ class ServiceTestCase(unittest.TestCase):
                 expected_result=True,
                 container_updated=True,
             ),
-            # empty_args=dict(
-            #     init_kwargs=dict(
-            #         name='service',
-            #         image='image:tag',
-            #         command='command',
-            #         args='',
-            #     ),
-            #     service_info=dict(),
-            #     expected_args={
-            #         'executable': ['docker', 'service', 'update'],
-            #         'image': 'image_id',
-            #         'replicas': '1',
-            #         'service': 'service',
-            #         'args': '""',
-            #     },
-            # ),
-            # new_option_value=dict(
-            #     init_kwargs=dict(
-            #         name='service',
-            #         image='image:tag',
-            #         args='arg1 "arg2" \'arg3\'',
-            #         options=dict(
-            #             ports='source:target',
-            #             mounts='type=volume,destination=/path',
-            #             labels='label=value',
-            #             env='FOO=bar',
-            #             constraints='node.role == manager',
-            #             container_labels='label=value',
-            #             network='network',
-            #             restart_condition='on-failure',
-            #             stop_timeout=10,
-            #             custom_option='custom_value',
-            #         ),
-            #     ),
-            #     service_info=dict(),
-            #     expected_args={
-            #         'executable': ['docker', 'service', 'update'],
-            #         'image': 'image_id',
-            #         'replicas': '1',
-            #         'publish-add': ['source:target'],
-            #         'mount-add': ['type=volume,destination=/path'],
-            #         'label-add': ['label=value'],
-            #         'env-add': ['FOO=bar'],
-            #         'constraint-add': ['"node.role == manager"'],
-            #         'container-label-add': ['label=value'],
-            #         'service': 'service',
-            #         'network': 'network',
-            #         'restart-condition': 'on-failure',
-            #         'stop-grace-period': '10',
-            #         'custom_option': 'custom_value',
-            #         'args': '"arg1 \\"arg2\\" \'arg3\'"',
-            #     },
-            # ),
             # new_options_values=dict(
             #     init_kwargs=dict(
             #         name='service',
@@ -2105,7 +2052,118 @@ class ServiceTestCase(unittest.TestCase):
 
     @mock.patch.object(docker.Image, 'digest', new_callable=mock.PropertyMock)
     @mock.patch.object(fabricio, 'run', return_value=SucceededResult('[{}]'))
-    def test_update_options(self, *args):
+    def test_update_options_removes_info_after_evaluating(self, *args):
         service = docker.Service(name='service')
         self.assertIsInstance(service.update_options, collections.Mapping)
         self.assertNotIn('info', service.__dict__)
+
+    @mock.patch.object(docker.Image, 'digest', new_callable=mock.PropertyMock, return_value='digest')
+    def test_update_options(self, *args):
+        cases = dict(
+            default=dict(
+                init_kwargs=dict(name='name'),
+                service_info=dict(),
+                expected={
+                    'env-add': None,
+                    'constraint-add': None,
+                    'label-rm': None,
+                    'network': None,
+                    'env-rm': None,
+                    'publish-add': None,
+                    'label-add': None,
+                    'image': 'digest',
+                    'args': None,
+                    'mount-rm': None,
+                    'container-label-rm': None,
+                    'user': None,
+                    'replicas': 1,
+                    'publish-rm': None,
+                    'mount-add': None,
+                    'constraint-rm': None,
+                    'stop-grace-period': None,
+                    'restart-condition': None,
+                    'container-label-add': None,
+                },
+            ),
+            empty_args=dict(
+                init_kwargs=dict(name='name', args=''),
+                service_info=dict(),
+                expected={
+                    'env-add': None,
+                    'constraint-add': None,
+                    'label-rm': None,
+                    'network': None,
+                    'env-rm': None,
+                    'publish-add': None,
+                    'label-add': None,
+                    'image': 'digest',
+                    'args': '',
+                    'mount-rm': None,
+                    'container-label-rm': None,
+                    'user': None,
+                    'replicas': 1,
+                    'publish-rm': None,
+                    'mount-add': None,
+                    'constraint-rm': None,
+                    'stop-grace-period': None,
+                    'restart-condition': None,
+                    'container-label-add': None,
+                },
+            ),
+            new_option_value=dict(
+                init_kwargs=dict(
+                    name='service',
+                    args='arg1 "arg2" \'arg3\'',
+                    options=dict(
+                        ports='source:target',
+                        mounts='type=volume,destination=/path',
+                        labels='label=value',
+                        env='FOO=bar',
+                        constraints='node.role == manager',
+                        container_labels='label=value',
+                        network='network',
+                        restart_condition='on-failure',
+                        stop_timeout=10,
+                        custom_option='custom_value',
+                    ),
+                ),
+                service_info=dict(),
+                expected={
+                    'env-add': 'FOO=bar',
+                    'constraint-add': 'node.role == manager',
+                    'label-rm': None,
+                    'network': 'network',
+                    'env-rm': None,
+                    'publish-add': 'source:target',
+                    'label-add': 'label=value',
+                    'image': 'digest',
+                    'args': 'arg1 "arg2" \'arg3\'',
+                    'mount-rm': None,
+                    'container-label-rm': None,
+                    'user': None,
+                    'replicas': 1,
+                    'publish-rm': None,
+                    'mount-add': 'type=volume,destination=/path',
+                    'constraint-rm': None,
+                    'stop-grace-period': 10,
+                    'restart-condition': 'on-failure',
+                    'custom_option': 'custom_value',
+                    'container-label-add': 'label=value',
+                },
+            ),
+        )
+        for case, data in cases.items():
+            with self.subTest(case=case):
+                with mock.patch.object(
+                    docker.Service,
+                    'info',
+                    new_callable=mock.PropertyMock,
+                    return_value=data['service_info'],
+                    __delete__=lambda *_: None,
+                ):
+                    service = docker.Service(**data['init_kwargs'])
+                    # print(case, dict(service.update_options))
+                    self.assertDictEqual(
+                        dict(service.update_options),
+                        data['expected'],
+                    )
