@@ -1124,6 +1124,22 @@ class ContainerTestCase(unittest.TestCase):
 
 class ImageTestCase(unittest.TestCase):
 
+    @mock.patch.object(
+        docker.Container,
+        'info',
+        new_callable=mock.PropertyMock,
+        return_value={"Image": "image_id"},
+    )
+    def test_id(self, info):
+        container = docker.Container(name='name', image='image:tag')
+        image = container.image
+        self.assertEqual(image.id, 'image_id')
+        self.assertEqual(image.id, 'image_id')
+        self.assertEqual(info.call_count, 1)
+
+        self.assertEqual(container.image.id, 'image_id')
+        self.assertEqual(info.call_count, 2)
+
     def test_info(self):
         return_value = SucceededResult('[{"Id": "123", "Image": "abc"}]')
         expected = dict(Id='123', Image='abc')

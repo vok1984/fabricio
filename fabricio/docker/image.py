@@ -62,7 +62,7 @@ class Image(object):
         image.container = container
 
         try:
-            del self._container_image_id
+            del image._container_image_id
         except AttributeError:
             pass
 
