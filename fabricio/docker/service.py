@@ -225,6 +225,21 @@ class Service(BaseService):
     def update(self, tag=None, registry=None, force=False):
         if not self.is_manager():
             return False
+
+        # TODO think about the below (about service revert)
+        # following example can be used to store service options within
+        # sentinel container meta information (labels) to be able to restore
+        # these options during service revert
+        #
+        # image_digest = self.image[registry:tag].digest
+        # update_options = dict(self.update_options, image=image_digest)
+        # sentinel = self.sentinel.fork(
+        #     TODO append new label to the list of existing container labels
+        #     options=dict(labels='service_options={service_options}'.format(
+        #         service_options=json.dumps(service_options),
+        #     )),
+        # )
+
         sentinel_updated = self.sentinel.update(
             tag=tag,
             registry=registry,
