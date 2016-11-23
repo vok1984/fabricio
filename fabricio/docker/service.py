@@ -88,13 +88,14 @@ class Mount(RemovableOption):
 
     class value_type(utils.Item):
 
+        comparison_value_re = re.compile(
+            'destination=(?P<quote>[\'"]?)(?P<dst>.*?)(?P=quote)(?:,|$)',
+            flags=re.UNICODE,
+        )
+
         def get_comparison_value(self):
             # fetch target path
-            match = re.search(
-                'destination=(?P<quote>[\'"]?)(?P<dst>.*?)(?P=quote)(?:,|$)',
-                self,
-                re.UNICODE,
-            )
+            match = self.comparison_value_re.search(self)
             return match and match.group('dst')
 
 
