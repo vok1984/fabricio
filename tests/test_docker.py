@@ -1662,7 +1662,7 @@ class ServiceTestCase(unittest.TestCase):
                 expected_result=True,
                 container_updated=True,
             ),
-            default=dict(
+            updated=dict(
                 init_kwargs=dict(
                     name='service',
                     image='image:tag',
