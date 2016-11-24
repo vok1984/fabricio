@@ -38,6 +38,7 @@ class Container(BaseService):
     user = Option()
     ports = Option(name='publish')
     env = Option()
+    labels = Option(name='label')
     volumes = Option(name='volume')
     links = Option(name='link')
     hosts = Option(name='add-host')

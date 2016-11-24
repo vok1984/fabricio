@@ -207,7 +207,7 @@ class Service(BaseService):
                     (option, callback(self))
                     for option, callback in self._update_options.items()
                 ],
-                image=self.image.digest,
+                image=self.image.digest,  # TODO need to be removed due to service rollback mechanics
                 args=self.args,
                 **self._additional_options
             )
@@ -241,7 +241,33 @@ class Service(BaseService):
         #     )),
         # )
 
-        sentinel_updated = self.sentinel.update(
+        sentinel = self.sentinel
+
+
+
+        # image_digest = self.image[registry:tag].digest
+        # try:
+        #     options = utils.Options(self.update_options, image=image_digest)
+        #     print(options)
+        #     label = 'service_options={0}'.format(json.dumps(str(options)))
+        #     sentinel_labels = self.sentinel.labels
+        #     if sentinel_labels:
+        #         try:
+        #             sentinel_labels.append(label)
+        #         except AttributeError:
+        #             sentinel_labels = [sentinel_labels, label]
+        #     else:
+        #         sentinel_labels = label
+        #     print(sentinel_labels)
+        #     sentinel = self.sentinel.fork(
+        #         options={'labels': sentinel_labels},
+        #     )
+        # except ServiceNotFoundError:
+        #     pass
+
+
+
+        sentinel_updated = sentinel.update(
             tag=tag,
             registry=registry,
             force=force,
