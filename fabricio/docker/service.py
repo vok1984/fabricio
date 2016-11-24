@@ -225,14 +225,12 @@ class Service(BaseService):
         if not self.is_manager():
             return False
 
-        image_digest = self.image[registry:tag].digest
-
         try:
             update_options = str(utils.Options(
                 self.update_options,
-                image=image_digest,
+                image=self.image[registry:tag].digest,
             ))
-            label = '__service_options={0}'.format(json.dumps(update_options))
+            label = '_service_options={0}'.format(json.dumps(update_options))
             sentinel_labels = self.sentinel.labels
             try:
                 sentinel_labels.append(label)
