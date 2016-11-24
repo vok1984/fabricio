@@ -233,7 +233,6 @@ class Service(BaseService):
                 image=image_digest,
             ))
             label = '__service_options={0}'.format(json.dumps(update_options))
-            print(label)
             sentinel_labels = self.sentinel.labels
             try:
                 sentinel_labels.append(label)
