@@ -207,14 +207,13 @@ class Service(BaseService):
                     (option, callback(self))
                     for option, callback in self._update_options.items()
                 ],
-                image=self.image.digest,  # TODO need to be removed due to service rollback mechanics
                 args=self.args,
                 **self._additional_options
             )
 
-    def _update(self):
+    def _update(self, update_options):
         fabricio.run('docker service update {options} {service}'.format(
-            options=utils.Options(self.update_options),
+            options=update_options,
             service=self,
         ))
 
@@ -226,60 +225,42 @@ class Service(BaseService):
         if not self.is_manager():
             return False
 
-        # TODO think about the below (about service revert)
-        # following example can be used to store service options within the
-        # sentinel container meta information (labels) to be able to restore
-        # them when we need to rollback the service
-        #
-        # image_digest = self.image[registry:tag].digest
-        # service_options = Options(self.update_options, image=image_digest)
-        # sentinel = self.sentinel.fork(
-        #     TODO append new label to the list of existing container labels
-        #     options=dict(labels='service_options={service_options}'.format(
-        #         # TODO use base64/json to serialize service_options
-        #         service_options=service_options,
-        #     )),
-        # )
+        image_digest = self.image[registry:tag].digest
 
-        sentinel = self.sentinel
+        try:
+            update_options = str(utils.Options(
+                self.update_options,
+                image=image_digest,
+            ))
+            label = '__service_options={0}'.format(json.dumps(update_options))
+            print(label)
+            sentinel_labels = self.sentinel.labels
+            try:
+                sentinel_labels.append(label)
+            except AttributeError:
+                if sentinel_labels:
+                    self.sentinel.labels = [sentinel_labels, label]
+                else:
+                    self.sentinel.labels = label
+        except ServiceNotFoundError:
+            update_options = None
 
-
-
-        # image_digest = self.image[registry:tag].digest
-        # try:
-        #     options = utils.Options(self.update_options, image=image_digest)
-        #     print(options)
-        #     label = 'service_options={0}'.format(json.dumps(str(options)))
-        #     sentinel_labels = self.sentinel.labels
-        #     if sentinel_labels:
-        #         try:
-        #             sentinel_labels.append(label)
-        #         except AttributeError:
-        #             sentinel_labels = [sentinel_labels, label]
-        #     else:
-        #         sentinel_labels = label
-        #     print(sentinel_labels)
-        #     sentinel = self.sentinel.fork(
-        #         options={'labels': sentinel_labels},
-        #     )
-        # except ServiceNotFoundError:
-        #     pass
-
-
-
-        sentinel_updated = sentinel.update(
+        sentinel_updated = self.sentinel.update(
             tag=tag,
             registry=registry,
             force=force,
             run=False,
         )
+
         if not sentinel_updated:
             return False
+
         if self.is_leader():
-            try:
-                self._update()
-            except ServiceNotFoundError:
-                self._create()
+            if update_options is None:
+                self._create()  # TODO create_options
+            else:
+                self._update(update_options)
+
         return True
 
     def revert(self):

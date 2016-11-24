@@ -1645,9 +1645,13 @@ class ServiceTestCase(unittest.TestCase):
                 ),
                 update_kwargs=dict(),
                 side_effect=(
-                    SucceededResult('false'),
+                    SucceededResult('false'),  # leader status
+                    SucceededResult('[{"RepoDigests": ["digest"]}]'),  # image info
+                    SucceededResult('[{}]'),  # service info
                 ),
                 args_parsers=[
+                    docker_entity_inspect_args_parser,
+                    docker_inspect_args_parser,
                     docker_entity_inspect_args_parser,
                 ],
                 expected_args=[
@@ -1655,6 +1659,15 @@ class ServiceTestCase(unittest.TestCase):
                         'executable': ['docker', 'node', 'inspect'],
                         'format': "'{{.ManagerStatus.Leader}}'",
                         'service': 'self',
+                    },
+                    {
+                        'executable': ['docker', 'inspect'],
+                        'type': 'image',
+                        'image_or_container': 'image:tag',
+                    },
+                    {
+                        'executable': ['docker', 'service', 'inspect'],
+                        'service': 'service',
                     },
                 ],
                 expected_result=False,
@@ -1667,9 +1680,13 @@ class ServiceTestCase(unittest.TestCase):
                 ),
                 update_kwargs=dict(),
                 side_effect=(
-                    SucceededResult('false'),
+                    SucceededResult('false'),  # leader status
+                    SucceededResult('[{"RepoDigests": ["digest"]}]'),  # image info
+                    SucceededResult('[{}]'),  # service info
                 ),
                 args_parsers=[
+                    docker_entity_inspect_args_parser,
+                    docker_inspect_args_parser,
                     docker_entity_inspect_args_parser,
                 ],
                 expected_args=[
@@ -1677,6 +1694,15 @@ class ServiceTestCase(unittest.TestCase):
                         'executable': ['docker', 'node', 'inspect'],
                         'format': "'{{.ManagerStatus.Leader}}'",
                         'service': 'self',
+                    },
+                    {
+                        'executable': ['docker', 'inspect'],
+                        'type': 'image',
+                        'image_or_container': 'image:tag',
+                    },
+                    {
+                        'executable': ['docker', 'service', 'inspect'],
+                        'service': 'service',
                     },
                 ],
                 expected_result=True,
@@ -1690,16 +1716,14 @@ class ServiceTestCase(unittest.TestCase):
                 update_kwargs=dict(),
                 side_effect=(
                     SucceededResult('true'),  # leader status
-                    SucceededResult('[{}]'),  # service info
-                    SucceededResult('[{"Image": "image_id"}]'),  # container info
                     SucceededResult('[{"RepoDigests": ["digest"]}]'),  # image info
+                    SucceededResult('[{}]'),  # service info
                     SucceededResult(),  # service update
                 ),
                 args_parsers=[
                     docker_entity_inspect_args_parser,
+                    docker_inspect_args_parser,
                     docker_entity_inspect_args_parser,
-                    docker_inspect_args_parser,
-                    docker_inspect_args_parser,
                     docker_service_update_args_parser,
                 ],
                 expected_args=[
@@ -1709,18 +1733,13 @@ class ServiceTestCase(unittest.TestCase):
                         'service': 'self',
                     },
                     {
-                        'executable': ['docker', 'service', 'inspect'],
-                        'service': 'service',
-                    },
-                    {
-                        'executable': ['docker', 'inspect'],
-                        'type': 'container',
-                        'image_or_container': 'service',
-                    },
-                    {
                         'executable': ['docker', 'inspect'],
                         'type': 'image',
-                        'image_or_container': 'image_id',
+                        'image_or_container': 'image:tag',
+                    },
+                    {
+                        'executable': ['docker', 'service', 'inspect'],
+                        'service': 'service',
                     },
                     {
                         'executable': ['docker', 'service', 'update'],
@@ -1764,7 +1783,6 @@ class ServiceTestCase(unittest.TestCase):
         self.assertIsInstance(service.update_options, collections.Mapping)
         self.assertNotIn('info', service.__dict__)
 
-    @mock.patch.object(docker.Image, 'digest', new_callable=mock.PropertyMock, return_value='digest')
     def test_update_options(self, *args):
         cases = dict(
             default=dict(
@@ -1778,7 +1796,6 @@ class ServiceTestCase(unittest.TestCase):
                     'env-rm': None,
                     'publish-add': None,
                     'label-add': None,
-                    'image': 'digest',
                     'args': None,
                     'mount-rm': None,
                     'container-label-rm': None,
@@ -1803,7 +1820,6 @@ class ServiceTestCase(unittest.TestCase):
                     'env-rm': None,
                     'publish-add': None,
                     'label-add': None,
-                    'image': 'digest',
                     'args': '',
                     'mount-rm': None,
                     'container-label-rm': None,
@@ -1845,7 +1861,6 @@ class ServiceTestCase(unittest.TestCase):
                     'env-rm': None,
                     'publish-add': 'source:target',
                     'label-add': 'label=value',
-                    'image': 'digest',
                     'args': 'arg1 "arg2" \'arg3\'',
                     'mount-rm': None,
                     'container-label-rm': None,
@@ -1865,7 +1880,6 @@ class ServiceTestCase(unittest.TestCase):
                     name='service',
                     sentinel=docker.Container(
                         stop_timeout=20,
-                        image='image:tag',
                         options=dict(
                             user='user',
                             ports='source:target',
@@ -1890,7 +1904,6 @@ class ServiceTestCase(unittest.TestCase):
                     "env-rm": None,
                     "publish-add": "source:target",
                     "label-add": None,
-                    "image": "digest",
                     "args": None,
                     "mount-rm": None,
                     "container-label-rm": None,
@@ -1907,11 +1920,9 @@ class ServiceTestCase(unittest.TestCase):
             new_option_value_by_sentinel_override=dict(
                 init_kwargs=dict(
                     name='service',
-                    image='image:service',
                     sentinel=docker.Container(
                         name='container',
                         stop_timeout=20,
-                        image='image:container',
                         options=dict(
                             user='user',
                             ports='source:target',
@@ -1942,7 +1953,6 @@ class ServiceTestCase(unittest.TestCase):
                     "env-rm": None,
                     "publish-add": "80:80",
                     "label-add": None,
-                    "image": "digest",
                     "args": None,
                     "mount-rm": None,
                     "container-label-rm": None,
@@ -1959,7 +1969,6 @@ class ServiceTestCase(unittest.TestCase):
             new_options_values=dict(
                 init_kwargs=dict(
                     name='service',
-                    image='image:tag',
                     options=dict(
                         ports=[
                             'source:target',
@@ -1996,7 +2005,6 @@ class ServiceTestCase(unittest.TestCase):
                     'env-rm': None,
                     'publish-add': ['source:target', 'source2:target2'],
                     'label-add': ['label=value', 'label2=value2'],
-                    'image': 'digest',
                     'args': None,
                     'mount-rm': None,
                     'container-label-rm': None,
@@ -2013,7 +2021,6 @@ class ServiceTestCase(unittest.TestCase):
             remove_option_value=dict(
                 init_kwargs=dict(
                     name='service',
-                    image='image:tag',
                 ),
                 service_info=dict(
                     Spec=dict(
@@ -2061,7 +2068,6 @@ class ServiceTestCase(unittest.TestCase):
                     'env-rm': set(['FOO=bar']),
                     'publish-add': None,
                     'label-add': None,
-                    'image': 'digest',
                     'args': None,
                     'mount-rm': set(['/path']),
                     'container-label-rm': set(['label']),
@@ -2078,7 +2084,6 @@ class ServiceTestCase(unittest.TestCase):
             remove_single_option_value_from_two=dict(
                 init_kwargs=dict(
                     name='service',
-                    image='image:tag',
                     options=dict(
                         ports='source2:target2',
                         mounts='type=volume,destination=/path',
@@ -2148,7 +2153,6 @@ class ServiceTestCase(unittest.TestCase):
                     'env-rm': set(['FOO2=bar2']),
                     'publish-add': 'source2:target2',
                     'label-add': 'label=value',
-                    'image': 'digest',
                     'args': None,
                     'mount-rm': set(['/path2']),
                     'container-label-rm': set(['label2']),
@@ -2165,7 +2169,6 @@ class ServiceTestCase(unittest.TestCase):
             remove_single_option_value_from_three=dict(
                 init_kwargs=dict(
                     name='service',
-                    image='image:tag',
                     options=dict(
                         ports=[
                             'source2:target2',
@@ -2267,7 +2270,6 @@ class ServiceTestCase(unittest.TestCase):
                     'env-rm': set(['FOO3=bar3']),
                     'publish-add': ['source2:target2', 'source3:target3'],
                     'label-add': ['label=value', 'label2=value2'],
-                    'image': 'digest',
                     'args': None,
                     'mount-rm': set(['/path3']),
                     'container-label-rm': set(['label3']),
