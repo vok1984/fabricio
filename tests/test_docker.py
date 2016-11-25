@@ -1777,6 +1777,12 @@ class ServiceTestCase(unittest.TestCase):
                         self.assertEqual(result, data['expected_result'])
                         self.assertEqual(run.call_count, len(data['expected_args']))
 
+    def test_update_full_cycle(self):
+        pass  # TODO without container mock
+
+    def test_create_full_cycle(self):
+        pass  # TODO without container mock
+
     @mock.patch.object(docker.Image, 'digest', new_callable=mock.PropertyMock)
     @mock.patch.object(fabricio, 'run', return_value=SucceededResult('[{}]'))
     def test_update_options_removes_info_after_evaluating(self, *args):
