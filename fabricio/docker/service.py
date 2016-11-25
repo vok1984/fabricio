@@ -230,15 +230,7 @@ class Service(BaseService):
                 self.update_options,
                 image=self.image[registry:tag].digest,
             ))
-            label = '_service_options={0}'.format(json.dumps(update_options))
-            sentinel_labels = self.sentinel.labels
-            try:
-                sentinel_labels.append(label)
-            except AttributeError:
-                if sentinel_labels:
-                    self.sentinel.labels = [sentinel_labels, label]
-                else:
-                    self.sentinel.labels = label
+            self._sentinel_set_service_options(update_options)
         except ServiceNotFoundError:
             update_options = None
 
@@ -262,6 +254,7 @@ class Service(BaseService):
 
     def revert(self):
         pass  # TODO finish implementation
+        # TODO consider difference between backup and current service options
 
     def pull_image(self, tag=None, registry=None):
         try:
@@ -320,3 +313,19 @@ class Service(BaseService):
 
     def is_leader(self):
         return self._leader_status == 'true'
+
+    def _sentinel_set_service_options(self, service_options):
+        """
+        stores service options within sentinel container meta information
+        which can be used later to restore actual service state during
+        rollback process
+        """
+        label = '_service_options={0}'.format(json.dumps(service_options))
+        sentinel_labels = self.sentinel.labels
+        try:
+            sentinel_labels.append(label)
+        except AttributeError:
+            if sentinel_labels:
+                self.sentinel.labels = [sentinel_labels, label]
+            else:
+                self.sentinel.labels = label

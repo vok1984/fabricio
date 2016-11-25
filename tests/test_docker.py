@@ -1751,6 +1751,7 @@ class ServiceTestCase(unittest.TestCase):
                 expected_result=True,
                 container_updated=True,
             ),
+            # created=dict(),  # TODO
         )
 
         def test_command(command, **kwargs):
