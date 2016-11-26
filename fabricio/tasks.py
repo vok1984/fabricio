@@ -645,7 +645,7 @@ class BuildDockerTasks(PullDockerTasks):
         prepare Docker image
         """
         options = Options([
-            ('tag', str(self.image[tag])),
+            ('tag', self.image[tag]),
             ('no-cache', strtobool(no_cache)),
             ('pull', True),
         ])
@@ -696,7 +696,7 @@ class ImageBuildDockerTasks(DockerTasks):
         prepare Docker image
         """
         options = Options([
-            ('tag', str(self.image[self.registry:tag])),
+            ('tag', self.image[self.registry:tag]),
             ('no-cache', strtobool(no_cache)),
             ('pull', True),
         ])

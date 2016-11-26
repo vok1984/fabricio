@@ -121,7 +121,7 @@ class PostgresqlBackupMixin(docker.Container):
         options.update(self.db_restore_options)
         options.update([
             ('dbname', 'template1'),  # use any existing DB
-            ('jobs', str(self.db_restore_workers)),
+            ('jobs', self.db_restore_workers),
             ('file', os.path.join(self.db_backup_dir, backup_filename)),
         ])
         return 'pg_restore {options}'.format(options=options)

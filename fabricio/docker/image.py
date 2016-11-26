@@ -149,7 +149,7 @@ class Image(object):
             command.format(image=self),
             abort_exception=ImageNotFoundError,
         )
-        return json.loads(str(info))[0]
+        return json.loads(info)[0]
 
     @cached_property
     def _container_image_id(self):
