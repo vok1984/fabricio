@@ -2372,8 +2372,10 @@ class ServiceTestCase(unittest.TestCase):
         for case, data in cases.items():
             with self.subTest(case=case):
                 service = docker.Service(**data['service_init_kwargs'])
+                old_labels_id = id(service.sentinel.labels)
                 service._sentinel_set_service_options(data['update_options'])
                 self.assertEqual(
                     service.sentinel.labels,
                     data['expected_sentinel_labels'],
                 )
+                self.assertNotEqual(id(service.sentinel.labels), old_labels_id)
