@@ -12,7 +12,8 @@ from fabricio import docker
 from fabricio.docker.container import Option, Attribute
 from tests import SucceededResult, docker_run_args_parser, \
     docker_service_update_args_parser, FailedResult, \
-    docker_entity_inspect_args_parser, docker_inspect_args_parser
+    docker_entity_inspect_args_parser, docker_inspect_args_parser, \
+    docker_service_create_args_parser
 
 
 class TestContainer(docker.Container):
@@ -1752,7 +1753,43 @@ class ServiceTestCase(unittest.TestCase):
                 expected_result=True,
                 container_updated=True,
             ),
-            # created=dict(),  # TODO
+            created=dict(
+                init_kwargs=dict(
+                    name='service',
+                    image='image:tag',
+                ),
+                update_kwargs=dict(),
+                side_effect=(
+                    SucceededResult('true'),  # leader status
+                    docker.ServiceNotFoundError(),  # service info
+                    SucceededResult(),  # service update
+                ),
+                args_parsers=[
+                    docker_entity_inspect_args_parser,
+                    docker_entity_inspect_args_parser,
+                    docker_service_create_args_parser,
+                ],
+                expected_args=[
+                    {
+                        'executable': ['docker', 'node', 'inspect'],
+                        'format': "'{{.ManagerStatus.Leader}}'",
+                        'service': 'self',
+                    },
+                    {
+                        'executable': ['docker', 'service', 'inspect'],
+                        'service': 'service',
+                    },
+                    {
+                        'executable': ['docker', 'service', 'create'],
+                        'image': ['image:tag'],
+                        'name': 'service',
+                        'replicas': '1',
+                        'args': [],
+                    },
+                ],
+                expected_result=True,
+                container_updated=True,
+            ),
         )
 
         def test_command(command, **kwargs):
@@ -1865,7 +1902,7 @@ class ServiceTestCase(unittest.TestCase):
                     'env-add': 'FOO=bar',
                     'constraint-add': 'node.role == manager',
                     'label-rm': None,
-                    'network': 'network',
+                    'network': None,
                     'env-rm': None,
                     'publish-add': 'source:target',
                     'label-add': 'label=value',

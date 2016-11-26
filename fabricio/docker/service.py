@@ -208,6 +208,7 @@ class Service(BaseService):
                     for option, callback in self._update_options.items()
                 ],
                 args=self.args,
+                network=None,  # network can't be updated
                 **self._additional_options
             )
 
@@ -217,9 +218,18 @@ class Service(BaseService):
             service=self,
         ))
 
-    def _create(self):
-        pass  # TODO
-        # TODO command += args
+    def _create(self, image):
+        command = 'docker service create {options} {image} {command} {args}'
+        fabricio.run(command.format(
+            options=utils.Options(self.options, name=self),
+            image=image,
+            command=(
+                '"{0}"'.format((self.command or '').replace('"', '\\"'))
+                if self.command or self.args else
+                ''
+            ),
+            args=self.args or '',
+        ))
 
     def update(self, tag=None, registry=None, force=False):
         if not self.is_manager():
@@ -246,7 +256,7 @@ class Service(BaseService):
 
         if self.is_leader():
             if update_options is None:
-                self._create()  # TODO create_options
+                self._create(image=self.image[registry:tag])
             else:
                 self._update(update_options)
 
