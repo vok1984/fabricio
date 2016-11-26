@@ -322,10 +322,13 @@ class Service(BaseService):
         """
         label = '_service_options={0}'.format(json.dumps(service_options))
         sentinel_labels = self.sentinel.labels
-        try:
-            sentinel_labels.append(label)
-        except AttributeError:
-            if sentinel_labels:
-                self.sentinel.labels = [sentinel_labels, label]
-            else:
-                self.sentinel.labels = label
+        if not sentinel_labels:
+            sentinel_labels = []
+        elif isinstance(sentinel_labels, six.string_types):
+            sentinel_labels = [sentinel_labels]
+        else:
+            try:
+                sentinel_labels = list(sentinel_labels)
+            except TypeError:
+                sentinel_labels = [six.text_type(sentinel_labels)]
+        self.sentinel.labels = sentinel_labels + [label]

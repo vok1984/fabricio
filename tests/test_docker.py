@@ -1,3 +1,4 @@
+# coding: utf-8
 import collections
 import mock
 import re
@@ -2305,3 +2306,74 @@ class ServiceTestCase(unittest.TestCase):
                         dict(service.update_options),
                         data['expected'],
                     )
+
+    def test__sentinel_set_service_options(self):
+        cases = dict(
+            empty=dict(
+                service_init_kwargs=dict(),
+                update_options='',
+                expected_sentinel_labels=['_service_options=""'],
+            ),
+            default=dict(
+                service_init_kwargs=dict(),
+                update_options='--replicas 1 --image registry/user/image@digest',
+                expected_sentinel_labels=['_service_options="--replicas 1 --image registry/user/image@digest"'],
+            ),
+            update_options_with_quotes=dict(
+                service_init_kwargs=dict(),
+                update_options='--replicas 1 --image image --foo "bar baz"',
+                expected_sentinel_labels=['_service_options="--replicas 1 --image image --foo \\"bar baz\\""'],
+            ),
+            unicode_update_options=dict(
+                service_init_kwargs=dict(),
+                update_options=u'--replicas 1 --image image --foo фу',
+                expected_sentinel_labels=['_service_options="--replicas 1 --image image --foo \\u0444\\u0443"'],
+            ),
+            existing_label=dict(
+                service_init_kwargs=dict(sentinel=docker.Container(options=dict(labels='label'))),
+                update_options='--replicas 1 --image image',
+                expected_sentinel_labels=[
+                    'label',
+                    '_service_options="--replicas 1 --image image"',
+                ],
+            ),
+            existing_labels=dict(
+                service_init_kwargs=dict(sentinel=docker.Container(options=dict(labels=['label1', 'label2']))),
+                update_options='--replicas 1 --image image',
+                expected_sentinel_labels=[
+                    'label1',
+                    'label2',
+                    '_service_options="--replicas 1 --image image"',
+                ],
+            ),
+            existing_unicode_labels=dict(
+                service_init_kwargs=dict(sentinel=docker.Container(options=dict(labels=[u'фу', u'бар']))),
+                update_options='--replicas 1 --image image',
+                expected_sentinel_labels=[
+                    u'фу',
+                    u'бар',
+                    '_service_options="--replicas 1 --image image"',
+                ],
+            ),
+            existing_unicode_label_as_object=dict(
+                service_init_kwargs=dict(sentinel=docker.Container(options=dict(labels=docker.Container(name=u'фу')))),
+                update_options='--replicas 1 --image image',
+                expected_sentinel_labels=[
+                    u'фу',
+                    '_service_options="--replicas 1 --image image"',
+                ],
+            ),
+            empty_list_of_labels=dict(
+                service_init_kwargs=dict(sentinel=docker.Container(options=dict(labels=[]))),
+                update_options='--replicas 1 --image image',
+                expected_sentinel_labels=['_service_options="--replicas 1 --image image"'],
+            ),
+        )
+        for case, data in cases.items():
+            with self.subTest(case=case):
+                service = docker.Service(**data['service_init_kwargs'])
+                service._sentinel_set_service_options(data['update_options'])
+                self.assertEqual(
+                    service.sentinel.labels,
+                    data['expected_sentinel_labels'],
+                )
