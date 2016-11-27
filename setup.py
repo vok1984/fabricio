@@ -13,7 +13,6 @@ install_requires = [
     'docker-py>=1.8.1,<2.0',
     'six>=1.4.0',
     'dpath>=1.4.0',
-    'contextlib2>=0.5,<0.6',
 ]
 
 if sys.version_info < (2,7):

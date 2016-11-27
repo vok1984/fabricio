@@ -4,7 +4,6 @@ import json
 import re
 import sys
 
-import contextlib2 as contextlib
 import dpath
 import six
 
@@ -202,16 +201,15 @@ class Service(BaseService):
 
     @property
     def update_options(self):
-        with utils.patch(self, 'info', self.info, force_delete=True):
-            return frozendict(
-                [
-                    (option, callback(self))
-                    for option, callback in self._update_options.items()
-                ],
-                args=self.args,
-                network=None,  # network can't be updated
-                **self._additional_options
-            )
+        return frozendict(
+            (
+                (option, callback(self))
+                for option, callback in self._update_options.items()
+            ),
+            args=self.args,
+            network=None,  # network can't be updated
+            **self._additional_options
+        )
 
     def _update(self, update_options):
         fabricio.run('docker service update {options} {service}'.format(
@@ -238,34 +236,32 @@ class Service(BaseService):
 
         image = self.image[registry:tag]
 
-        with contextlib.ExitStack() as context_stack:
-            try:
-                _update_options = self.update_options
-                context = utils.patch(type(self.image), 'info', image.info)
-                context_stack.enter_context(context)
+        try:
+            service_info = self.info
+        except ServiceNotFoundError:
+            service_info = {}
+
+        with utils.patch(self, 'info', service_info, force_delete=True):
+            with utils.patch(type(self.image), 'info', image.info):
                 update_options = str(utils.Options(
-                    _update_options,
+                    self.update_options,
                     image=image.digest,
                 ))
                 self._sentinel_set_service_options(update_options)
-            except ServiceNotFoundError:
-                update_options = None
 
-            sentinel_updated = self.sentinel.update(
-                tag=tag,
-                registry=registry,
-                force=force,
-                run=False,
-            )
-
-        if not sentinel_updated:
-            return False
+                if not self.sentinel.update(
+                    tag=tag,
+                    registry=registry,
+                    force=force,
+                    run=False,
+                ):
+                    return False
 
         if self.is_leader():
-            if update_options is None:
-                self._create(image)
-            else:
+            if service_info:
                 self._update(update_options)
+            else:
+                self._create(image)
 
         return True
 
