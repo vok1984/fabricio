@@ -1,5 +1,6 @@
 argparse
 cached-property
+contextlib2
 docker-py
 dpath
 fabric

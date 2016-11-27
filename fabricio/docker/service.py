@@ -4,6 +4,7 @@ import json
 import re
 import sys
 
+import contextlib2 as contextlib
 import dpath
 import six
 
@@ -218,11 +219,11 @@ class Service(BaseService):
             service=self,
         ))
 
-    def _create(self, tag, registry):
+    def _create(self, image):
         command = 'docker service create {options} {image} {command} {args}'
         fabricio.run(command.format(
             options=utils.Options(self.options, name=self),
-            image=self.image[registry:tag],
+            image=image,
             command=(
                 '"{0}"'.format((self.command or '').replace('"', '\\"'))
                 if self.command or self.args else
@@ -236,10 +237,14 @@ class Service(BaseService):
             return False
 
         image = self.image[registry:tag]
-        with utils.patch(type(self.image), 'info', image.info):
+
+        with contextlib.ExitStack() as context_stack:
             try:
+                _update_options = self.update_options
+                context = utils.patch(type(self.image), 'info', image.info)
+                context_stack.enter_context(context)
                 update_options = str(utils.Options(
-                    self.update_options,
+                    _update_options,
                     image=image.digest,
                 ))
                 self._sentinel_set_service_options(update_options)
@@ -258,7 +263,7 @@ class Service(BaseService):
 
         if self.is_leader():
             if update_options is None:
-                self._create(tag=tag, registry=registry)
+                self._create(image)
             else:
                 self._update(update_options)
 
