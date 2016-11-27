@@ -142,7 +142,7 @@ class Image(object):
             return repo_digest
         return self.__str__()
 
-    @property
+    @utils.default_property
     def info(self):
         command = 'docker inspect --type image {image}'
         info = fabricio.run(

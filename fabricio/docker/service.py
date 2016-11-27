@@ -218,11 +218,11 @@ class Service(BaseService):
             service=self,
         ))
 
-    def _create(self, image):
+    def _create(self, tag, registry):
         command = 'docker service create {options} {image} {command} {args}'
         fabricio.run(command.format(
             options=utils.Options(self.options, name=self),
-            image=image,
+            image=self.image[registry:tag],
             command=(
                 '"{0}"'.format((self.command or '').replace('"', '\\"'))
                 if self.command or self.args else
@@ -235,28 +235,30 @@ class Service(BaseService):
         if not self.is_manager():
             return False
 
-        try:
-            update_options = str(utils.Options(
-                self.update_options,
-                image=self.image[registry:tag].digest,
-            ))
-            self._sentinel_set_service_options(update_options)
-        except ServiceNotFoundError:
-            update_options = None
+        image = self.image[registry:tag]
+        with utils.patch(type(self.image), 'info', image.info):
+            try:
+                update_options = str(utils.Options(
+                    self.update_options,
+                    image=image.digest,
+                ))
+                self._sentinel_set_service_options(update_options)
+            except ServiceNotFoundError:
+                update_options = None
 
-        sentinel_updated = self.sentinel.update(
-            tag=tag,
-            registry=registry,
-            force=force,
-            run=False,
-        )
+            sentinel_updated = self.sentinel.update(
+                tag=tag,
+                registry=registry,
+                force=force,
+                run=False,
+            )
 
         if not sentinel_updated:
             return False
 
         if self.is_leader():
             if update_options is None:
-                self._create(image=self.image[registry:tag])
+                self._create(tag=tag, registry=registry)
             else:
                 self._update(update_options)
 

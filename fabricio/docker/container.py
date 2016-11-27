@@ -3,6 +3,8 @@ import warnings
 
 import fabricio
 
+from fabricio import utils
+
 from .base import BaseService, Option, Attribute
 from .image import Image
 
@@ -79,7 +81,7 @@ class Container(BaseService):
             **attrs
         )
 
-    @property
+    @utils.default_property
     def info(self):
         command = 'docker inspect --type container {container}'
         info = fabricio.run(
@@ -176,15 +178,12 @@ class Container(BaseService):
     def update(self, tag=None, registry=None, force=False, run=True):
         if not force:
             try:
-                current_image_id = self.image.id
-            except ContainerNotFoundError:
-                pass
-            else:
-                new_image = self.image[registry:tag]
-                if current_image_id == new_image.id:
+                if self.image.id == self.image[registry:tag].id:
                     if run:
                         self.start()  # force starting container
                     return False
+            except ContainerNotFoundError:
+                pass
         new_container = self.fork()
         obsolete_container = self.get_backup_container()
         try:

@@ -1648,13 +1648,13 @@ class ServiceTestCase(unittest.TestCase):
                 update_kwargs=dict(),
                 side_effect=(
                     SucceededResult('false'),  # leader status
-                    SucceededResult('[{}]'),  # service info
                     SucceededResult('[{"RepoDigests": ["digest"]}]'),  # image info
+                    SucceededResult('[{}]'),  # service info
                 ),
                 args_parsers=[
                     docker_entity_inspect_args_parser,
-                    docker_entity_inspect_args_parser,
                     docker_inspect_args_parser,
+                    docker_entity_inspect_args_parser,
                 ],
                 expected_args=[
                     {
@@ -1663,13 +1663,13 @@ class ServiceTestCase(unittest.TestCase):
                         'service': 'self',
                     },
                     {
-                        'executable': ['docker', 'service', 'inspect'],
-                        'service': 'service',
-                    },
-                    {
                         'executable': ['docker', 'inspect'],
                         'type': 'image',
                         'image_or_container': 'image:tag',
+                    },
+                    {
+                        'executable': ['docker', 'service', 'inspect'],
+                        'service': 'service',
                     },
                 ],
                 expected_result=False,
@@ -1683,13 +1683,13 @@ class ServiceTestCase(unittest.TestCase):
                 update_kwargs=dict(),
                 side_effect=(
                     SucceededResult('false'),  # leader status
-                    SucceededResult('[{}]'),  # service info
                     SucceededResult('[{"RepoDigests": ["digest"]}]'),  # image info
+                    SucceededResult('[{}]'),  # service info
                 ),
                 args_parsers=[
                     docker_entity_inspect_args_parser,
-                    docker_entity_inspect_args_parser,
                     docker_inspect_args_parser,
+                    docker_entity_inspect_args_parser,
                 ],
                 expected_args=[
                     {
@@ -1698,13 +1698,13 @@ class ServiceTestCase(unittest.TestCase):
                         'service': 'self',
                     },
                     {
-                        'executable': ['docker', 'service', 'inspect'],
-                        'service': 'service',
-                    },
-                    {
                         'executable': ['docker', 'inspect'],
                         'type': 'image',
                         'image_or_container': 'image:tag',
+                    },
+                    {
+                        'executable': ['docker', 'service', 'inspect'],
+                        'service': 'service',
                     },
                 ],
                 expected_result=True,
@@ -1718,14 +1718,14 @@ class ServiceTestCase(unittest.TestCase):
                 update_kwargs=dict(),
                 side_effect=(
                     SucceededResult('true'),  # leader status
-                    SucceededResult('[{}]'),  # service info
                     SucceededResult('[{"RepoDigests": ["digest"]}]'),  # image info
+                    SucceededResult('[{}]'),  # service info
                     SucceededResult(),  # service update
                 ),
                 args_parsers=[
                     docker_entity_inspect_args_parser,
-                    docker_entity_inspect_args_parser,
                     docker_inspect_args_parser,
+                    docker_entity_inspect_args_parser,
                     docker_service_update_args_parser,
                 ],
                 expected_args=[
@@ -1735,13 +1735,13 @@ class ServiceTestCase(unittest.TestCase):
                         'service': 'self',
                     },
                     {
-                        'executable': ['docker', 'service', 'inspect'],
-                        'service': 'service',
-                    },
-                    {
                         'executable': ['docker', 'inspect'],
                         'type': 'image',
                         'image_or_container': 'image:tag',
+                    },
+                    {
+                        'executable': ['docker', 'service', 'inspect'],
+                        'service': 'service',
                     },
                     {
                         'executable': ['docker', 'service', 'update'],
@@ -1761,11 +1761,13 @@ class ServiceTestCase(unittest.TestCase):
                 update_kwargs=dict(),
                 side_effect=(
                     SucceededResult('true'),  # leader status
+                    SucceededResult('[{"RepoDigests": ["digest"]}]'),  # image info
                     docker.ServiceNotFoundError(),  # service info
                     SucceededResult(),  # service update
                 ),
                 args_parsers=[
                     docker_entity_inspect_args_parser,
+                    docker_inspect_args_parser,
                     docker_entity_inspect_args_parser,
                     docker_service_create_args_parser,
                 ],
@@ -1774,6 +1776,11 @@ class ServiceTestCase(unittest.TestCase):
                         'executable': ['docker', 'node', 'inspect'],
                         'format': "'{{.ManagerStatus.Leader}}'",
                         'service': 'self',
+                    },
+                    {
+                        'executable': ['docker', 'inspect'],
+                        'type': 'image',
+                        'image_or_container': 'image:tag',
                     },
                     {
                         'executable': ['docker', 'service', 'inspect'],
