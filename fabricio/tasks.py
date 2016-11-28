@@ -1,7 +1,5 @@
-import collections
 import contextlib
 import functools
-import multiprocessing
 import os
 import sys
 import types
@@ -170,8 +168,8 @@ class _DockerTasks(Tasks):
         self.migrate.use_task_objects = migrate_commands
         self.migrate_back.use_task_objects = migrate_commands
         self.revert.use_task_objects = False  # disabled in favour of rollback
-        self._backup_done = collections.defaultdict(multiprocessing.Event)
-        self._restore_done = collections.defaultdict(multiprocessing.Event)
+        self._backup_done = set()
+        self._restore_done = set()
 
     @property
     def image(self):
@@ -219,9 +217,8 @@ class _DockerTasks(Tasks):
         backup data
         """
         with self.service.lock:
-            backup_done = self._backup_done[fab.env.infrastructure]
-            if not backup_done.is_set():
-                backup_done.set()
+            if fab.env.infrastructure not in self._backup_done:
+                self._backup_done.add(fab.env.infrastructure)
                 self.service.backup()
 
     @fab.task
@@ -231,9 +228,8 @@ class _DockerTasks(Tasks):
         restore data
         """
         with self.service.lock:
-            restore_done = self._restore_done[fab.env.infrastructure]
-            if not restore_done.is_set():
-                restore_done.set()
+            if fab.env.infrastructure not in self._restore_done:
+                self._restore_done.add(fab.env.infrastructure)
                 self.service.restore(backup_name=backup_filename)
 
     @fab.task
@@ -431,8 +427,8 @@ class DockerTasks(Tasks):
         self.revert.use_task_objects = False  # disabled in favour of rollback
         self.prepare.use_task_objects = registry is not None
         self.push.use_task_objects = registry is not None
-        self._backup_done = collections.defaultdict(multiprocessing.Event)
-        self._restore_done = collections.defaultdict(multiprocessing.Event)
+        self._backup_done = set()
+        self._restore_done = set()
 
     @property
     def image(self):
@@ -483,9 +479,8 @@ class DockerTasks(Tasks):
         backup data
         """
         with self.service.lock:
-            backup_done = self._backup_done[fab.env.infrastructure]
-            if not backup_done.is_set():
-                backup_done.set()
+            if fab.env.infrastructure not in self._backup_done:
+                self._backup_done.add(fab.env.infrastructure)
                 self.service.backup()
 
     @fab.task
@@ -496,9 +491,8 @@ class DockerTasks(Tasks):
         restore data
         """
         with self.service.lock:
-            restore_done = self._restore_done[fab.env.infrastructure]
-            if not restore_done.is_set():
-                restore_done.set()
+            if fab.env.infrastructure not in self._restore_done:
+                self._restore_done.add(fab.env.infrastructure)
                 self.service.restore(backup_name=backup_filename)
 
     @fab.task(task_class=IgnoreHostsTask)
