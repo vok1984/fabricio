@@ -443,7 +443,6 @@ class DockerTasks(Tasks):
         self.service.revert()
 
     @fab.task
-    @fab.serial
     @skip_unknown_host
     def migrate(self, tag=None):
         """
@@ -453,7 +452,6 @@ class DockerTasks(Tasks):
             self.service.migrate(tag=tag, registry=self.host_registry)
 
     @fab.task
-    @fab.serial
     @skip_unknown_host
     def migrate_back(self):
         """
@@ -472,7 +470,6 @@ class DockerTasks(Tasks):
         fab.execute(self.revert)
 
     @fab.task
-    @fab.serial
     @skip_unknown_host
     def backup(self):
         """
@@ -484,7 +481,6 @@ class DockerTasks(Tasks):
                 self.service.backup()
 
     @fab.task
-    @fab.serial
     @skip_unknown_host
     def restore(self, backup_filename=None):
         """
