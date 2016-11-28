@@ -2436,6 +2436,16 @@ class ServiceTestCase(unittest.TestCase):
                     'args': [],
                 },
             ),
+            custom_image=dict(
+                service_init_kwargs=dict(name='service', image='custom'),
+                expected_args={
+                    'executable': ['docker', 'service', 'create'],
+                    'image': ['image:tag'],
+                    'name': 'service',
+                    'replicas': '1',
+                    'args': [],
+                },
+            ),
             custom_command=dict(
                 service_init_kwargs=dict(name='service', command='command'),
                 expected_args={
@@ -2520,13 +2530,10 @@ class ServiceTestCase(unittest.TestCase):
             )
             options = docker_service_create_args_parser.parse_args(args)
             self.assertDictEqual(vars(options), data['expected_args'])
+        image = docker.Image('image:tag')
         for case, data in cases.items():
             with self.subTest(case=case):
-                image = docker.Image('image:tag')
-                service = docker.Service(
-                    image=image,
-                    **data['service_init_kwargs']
-                )
+                service = docker.Service(**data['service_init_kwargs'])
                 with mock.patch.object(
                     fabricio,
                     'run',
