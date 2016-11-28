@@ -449,7 +449,8 @@ class DockerTasks(Tasks):
         """
         apply migrations
         """
-        self.service.migrate(tag=tag, registry=self.host_registry)
+        with self.service.lock:
+            self.service.migrate(tag=tag, registry=self.host_registry)
 
     @fab.task
     @fab.serial
@@ -458,7 +459,8 @@ class DockerTasks(Tasks):
         """
         remove previously applied migrations if any
         """
-        self.service.migrate_back()
+        with self.service.lock:
+            self.service.migrate_back()
 
     @fab.task(task_class=IgnoreHostsTask)
     def rollback(self, migrate_back=True):
@@ -476,9 +478,10 @@ class DockerTasks(Tasks):
         """
         backup data
         """
-        if fab.env.infrastructure not in self._backup_done:
-            self._backup_done.add(fab.env.infrastructure)
-            self.service.backup()
+        with self.service.lock:
+            if fab.env.infrastructure not in self._backup_done:
+                self._backup_done.add(fab.env.infrastructure)
+                self.service.backup()
 
     @fab.task
     @fab.serial
@@ -487,9 +490,10 @@ class DockerTasks(Tasks):
         """
         restore data
         """
-        if fab.env.infrastructure not in self._restore_done:
-            self._restore_done.add(fab.env.infrastructure)
-            self.service.restore(backup_name=backup_filename)
+        with self.service.lock:
+            if fab.env.infrastructure not in self._restore_done:
+                self._restore_done.add(fab.env.infrastructure)
+                self.service.restore(backup_name=backup_filename)
 
     @fab.task(task_class=IgnoreHostsTask)
     def prepare(self, tag=None):
