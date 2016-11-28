@@ -1,3 +1,4 @@
+import contextlib
 import dummy_threading
 import functools
 import json
@@ -287,21 +288,39 @@ class Service(BaseService):
                 output=sys.stderr,
             )
 
+    @contextlib.contextmanager
+    def _non_blocking_lock(self):
+        lock = super(Service, self).lock
+        locked = lock.acquire(False)
+        try:
+            yield locked
+        finally:
+            if locked:
+                lock.release()
+
     def migrate(self, tag=None, registry=None):
         if self.is_leader():
-            self.sentinel.migrate(tag=tag, registry=registry)
+            with self._non_blocking_lock() as locked:
+                if locked:
+                    self.sentinel.migrate(tag=tag, registry=registry)
 
     def migrate_back(self):
         if self.is_leader():
-            self.sentinel.migrate_back()
+            with self._non_blocking_lock() as locked:
+                if locked:
+                    self.sentinel.migrate_back()
 
     def backup(self):
         if self.is_leader():
-            self.sentinel.backup()
+            with self._non_blocking_lock() as locked:
+                if locked:
+                    self.sentinel.backup()
 
     def restore(self, backup_name=None):
         if self.is_leader():
-            self.sentinel.restore(backup_name=backup_name)
+            with self._non_blocking_lock() as locked:
+                if locked:
+                    self.sentinel.restore(backup_name=backup_name)
 
     @utils.default_property
     def info(self):
