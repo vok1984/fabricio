@@ -2423,3 +2423,113 @@ class ServiceTestCase(unittest.TestCase):
                     data['expected_sentinel_labels'],
                 )
                 self.assertNotEqual(id(service.sentinel.labels), old_labels_id)
+
+    def test__create(self):
+        cases = dict(
+            default=dict(
+                service_init_kwargs=dict(name='service'),
+                expected_args={
+                    'executable': ['docker', 'service', 'create'],
+                    'image': ['image:tag'],
+                    'name': 'service',
+                    'replicas': '1',
+                    'args': [],
+                },
+            ),
+            custom_command=dict(
+                service_init_kwargs=dict(name='service', command='command'),
+                expected_args={
+                    'executable': ['docker', 'service', 'create'],
+                    'image': ['image:tag'],
+                    'name': 'service',
+                    'replicas': '1',
+                    'args': [],
+                    'command': '"command"',
+                },
+            ),
+            custom_args=dict(
+                service_init_kwargs=dict(name='service', args='arg1 arg2'),
+                expected_args={
+                    'executable': ['docker', 'service', 'create'],
+                    'image': ['image:tag'],
+                    'name': 'service',
+                    'replicas': '1',
+                    'args': ['arg1', 'arg2'],
+                    'command': '""',
+                },
+            ),
+            custom_command_and_args=dict(
+                service_init_kwargs=dict(
+                    name='service',
+                    command='command',
+                    args='arg1 arg2',
+                ),
+                expected_args={
+                    'executable': ['docker', 'service', 'create'],
+                    'image': ['image:tag'],
+                    'name': 'service',
+                    'replicas': '1',
+                    'args': ['arg1', 'arg2'],
+                    'command': '"command"',
+                },
+            ),
+            complex=dict(
+                service_init_kwargs=dict(
+                    name='service',
+                    command='command1 command2',
+                    args='arg1 arg2',
+                    options=dict(
+                        mounts=['mount1', 'mount2'],
+                        constraints=['constraint1', 'constraint2'],
+                        container_labels=['c_label1', 'c_label2'],
+                        labels=['label1', 'label2'],
+                        env=['en1', 'env2'],
+                        ports=['port1', 'port2'],
+                        replicas=5,
+                        network='network',
+                        restart_condition='restart_condition',
+                        user='user',
+                        stop_timeout=20,
+                    ),
+                ),
+                expected_args={
+                    'executable': ['docker', 'service', 'create'],
+                    'args': ['arg1', 'arg2'],
+                    'network': 'network',
+                    'constraint': ['constraint1', 'constraint2'],
+                    'mount': ['mount1', 'mount2'],
+                    'replicas': '5',
+                    'publish': ['port1', 'port2'],
+                    'label': ['label1', 'label2'],
+                    'container-label': ['c_label1', 'c_label2'],
+                    'command': '"command1 command2"',
+                    'user': 'user',
+                    'env': ['en1', 'env2'],
+                    'stop-grace-period': '20',
+                    'restart-condition': 'restart_condition',
+                    'image': ['image:tag'],
+                    'name': 'service',
+                },
+            ),
+        )
+
+        def test_command(command, *args, **kwargs):
+            args = re.findall(
+                '".+?(?<!\\\\)"|\'.+?(?<!\\\\)\'|[^\s]+',
+                command,
+            )
+            options = docker_service_create_args_parser.parse_args(args)
+            self.assertDictEqual(vars(options), data['expected_args'])
+        for case, data in cases.items():
+            with self.subTest(case=case):
+                image = docker.Image('image:tag')
+                service = docker.Service(
+                    image=image,
+                    **data['service_init_kwargs']
+                )
+                with mock.patch.object(
+                    fabricio,
+                    'run',
+                    side_effect=test_command,
+                ):
+                    service._create(image)
