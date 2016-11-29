@@ -1,3 +1,4 @@
+import contextlib
 import functools
 import json
 import re
@@ -283,10 +284,11 @@ class Service(BaseService):
                 output=sys.stderr,
             )
 
-    def _non_blocking_lock(self):
+    @contextlib.contextmanager
+    def lock(self):
         if not self.is_leader():
             raise LockImpossible
-        return super(Service, self)._non_blocking_lock()
+        return super(Service, self).lock()
 
     def migrate(self, tag=None, registry=None):
         self.sentinel.migrate(tag=tag, registry=registry)

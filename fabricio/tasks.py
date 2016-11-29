@@ -1,3 +1,4 @@
+import collections
 import contextlib
 import functools
 import os
@@ -169,6 +170,7 @@ class _DockerTasks(Tasks):
         self.migrate.use_task_objects = migrate_commands
         self.migrate_back.use_task_objects = migrate_commands
         self.revert.use_task_objects = False  # disabled in favour of rollback
+        self._locks = collections.defaultdict(set)
 
     @property
     def image(self):
@@ -182,13 +184,26 @@ class _DockerTasks(Tasks):
         """
         self.service.revert()
 
+    @contextlib.contextmanager
+    def exclusive_lock(self, callback):
+        if fab.env.parallel:
+            raise TypeError('Cannot use exclusive_lock in parallel mode')
+        if callback in self._locks[fab.env.infrastructure]:
+            raise LockImpossible
+        self._locks[fab.env.infrastructure].add(callback)
+        yield
+
     def execute_with_lock(self, *args, **kwargs):
         try:
             callback, args = args[0], args[1:]
         except IndexError:
             raise ValueError('Must provide callback argument')
+        if fab.env.parallel:
+            lock = self.service.lock()
+        else:
+            lock = self.exclusive_lock(callback)
         try:
-            with self.service.lock:
+            with lock:
                 return callback(*args, **kwargs)
         except LockImpossible:
             pass
@@ -436,6 +451,7 @@ class DockerTasks(Tasks):
         self.revert.use_task_objects = False  # disabled in favour of rollback
         self.prepare.use_task_objects = registry is not None
         self.push.use_task_objects = registry is not None
+        self._locks = collections.defaultdict(set)
 
     @property
     def image(self):
@@ -449,13 +465,26 @@ class DockerTasks(Tasks):
         """
         self.service.revert()
 
+    @contextlib.contextmanager
+    def exclusive_lock(self, callback):
+        if fab.env.parallel:
+            raise TypeError('Cannot use exclusive_lock in parallel mode')
+        if callback in self._locks[fab.env.infrastructure]:
+            raise LockImpossible
+        self._locks[fab.env.infrastructure].add(callback)
+        yield
+
     def execute_with_lock(self, *args, **kwargs):
         try:
             callback, args = args[0], args[1:]
         except IndexError:
             raise ValueError('Must provide callback argument')
+        if fab.env.parallel:
+            lock = self.service.lock()
+        else:
+            lock = self.exclusive_lock(callback)
         try:
-            with self.service.lock:
+            with lock:
                 return callback(*args, **kwargs)
         except LockImpossible:
             pass
