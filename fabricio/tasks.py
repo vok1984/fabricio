@@ -17,14 +17,6 @@ from fabricio import docker
 from fabricio.docker.base import LockImpossible
 from fabricio.utils import patch, strtobool, Options, OrderedDict
 
-__all__ = [
-    'infrastructure',
-    'skip_unknown_host',
-    'DockerTasks',
-    'PullDockerTasks',
-    'BuildDockerTasks',
-]
-
 
 def skip_unknown_host(task):
     @functools.wraps(task)
