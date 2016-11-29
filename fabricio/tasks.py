@@ -170,7 +170,7 @@ class _DockerTasks(Tasks):
         self.migrate.use_task_objects = migrate_commands
         self.migrate_back.use_task_objects = migrate_commands
         self.revert.use_task_objects = False  # disabled in favour of rollback
-        self._locks = collections.defaultdict(set)
+        self._calls = collections.defaultdict(set)
 
     @property
     def image(self):
@@ -185,12 +185,12 @@ class _DockerTasks(Tasks):
         self.service.revert()
 
     @contextlib.contextmanager
-    def exclusive_lock(self, callback):
+    def once_per_infrastructure(self, callback):
         if fab.env.parallel:
-            raise TypeError('Cannot use exclusive_lock in parallel mode')
-        if callback in self._locks[fab.env.infrastructure]:
+            raise TypeError('Cannot be used in parallel mode')
+        if callback in self._calls[fab.env.infrastructure]:
             raise LockImpossible
-        self._locks[fab.env.infrastructure].add(callback)
+        self._calls[fab.env.infrastructure].add(callback)
         yield
 
     def execute_with_lock(self, *args, **kwargs):
@@ -198,11 +198,11 @@ class _DockerTasks(Tasks):
             callback, args = args[0], args[1:]
         except IndexError:
             raise ValueError('Must provide callback argument')
-        if fab.env.parallel:
-            lock = self.service.lock()
-        else:
-            lock = self.exclusive_lock(callback)
         try:
+            if fab.env.parallel:
+                lock = self.service.lock()
+            else:
+                lock = self.once_per_infrastructure(callback)
             with lock:
                 return callback(*args, **kwargs)
         except LockImpossible:
@@ -451,7 +451,7 @@ class DockerTasks(Tasks):
         self.revert.use_task_objects = False  # disabled in favour of rollback
         self.prepare.use_task_objects = registry is not None
         self.push.use_task_objects = registry is not None
-        self._locks = collections.defaultdict(set)
+        self._calls = collections.defaultdict(set)
 
     @property
     def image(self):
@@ -466,12 +466,12 @@ class DockerTasks(Tasks):
         self.service.revert()
 
     @contextlib.contextmanager
-    def exclusive_lock(self, callback):
+    def once_per_infrastructure(self, callback):
         if fab.env.parallel:
-            raise TypeError('Cannot use exclusive_lock in parallel mode')
-        if callback in self._locks[fab.env.infrastructure]:
+            raise TypeError('Cannot be used in parallel mode')
+        if callback in self._calls[fab.env.infrastructure]:
             raise LockImpossible
-        self._locks[fab.env.infrastructure].add(callback)
+        self._calls[fab.env.infrastructure].add(callback)
         yield
 
     def execute_with_lock(self, *args, **kwargs):
@@ -479,11 +479,11 @@ class DockerTasks(Tasks):
             callback, args = args[0], args[1:]
         except IndexError:
             raise ValueError('Must provide callback argument')
-        if fab.env.parallel:
-            lock = self.service.lock()
-        else:
-            lock = self.exclusive_lock(callback)
         try:
+            if fab.env.parallel:
+                lock = self.service.lock()
+            else:
+                lock = self.once_per_infrastructure(callback)
             with lock:
                 return callback(*args, **kwargs)
         except LockImpossible:

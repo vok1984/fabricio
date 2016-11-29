@@ -1,4 +1,3 @@
-import contextlib
 import functools
 import json
 import re
@@ -284,7 +283,6 @@ class Service(BaseService):
                 output=sys.stderr,
             )
 
-    @contextlib.contextmanager
     def lock(self):
         if not self.is_leader():
             raise LockImpossible
