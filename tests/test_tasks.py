@@ -457,6 +457,7 @@ class DockerTasksTestCase(unittest.TestCase):
             ),
         )
         deploy = mock.Mock()
+        migrate.__hash__ = backup.__hash__ = object.__hash__
         deploy.attach_mock(backup, 'backup')
         deploy.attach_mock(migrate, 'migrate')
         deploy.attach_mock(update, 'update')
@@ -731,6 +732,7 @@ class PullDockerTasksTestCase(unittest.TestCase):
             ),
         )
         deploy = mock.Mock()
+        migrate.__hash__ = backup.__hash__ = object.__hash__
         deploy.attach_mock(backup, 'backup')
         deploy.attach_mock(migrate, 'migrate')
         deploy.attach_mock(update, 'update')
@@ -947,6 +949,7 @@ class BuildDockerTasksTestCase(unittest.TestCase):
             ),
         )
         deploy = mock.Mock()
+        migrate.__hash__ = backup.__hash__ = object.__hash__
         deploy.attach_mock(backup, 'backup')
         deploy.attach_mock(migrate, 'migrate')
         deploy.attach_mock(update, 'update')
@@ -1221,6 +1224,7 @@ class ImageBuildDockerTasksTestCase(unittest.TestCase):
             ),
         )
         deploy = mock.Mock()
+        migrate.__hash__ = backup.__hash__ = object.__hash__
         deploy.attach_mock(backup, 'backup')
         deploy.attach_mock(migrate, 'migrate')
         deploy.attach_mock(update, 'update')
