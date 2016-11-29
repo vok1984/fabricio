@@ -168,8 +168,6 @@ class _DockerTasks(Tasks):
         self.migrate.use_task_objects = migrate_commands
         self.migrate_back.use_task_objects = migrate_commands
         self.revert.use_task_objects = False  # disabled in favour of rollback
-        self._backup_done = set()
-        self._restore_done = set()
 
     @property
     def image(self):
@@ -189,8 +187,11 @@ class _DockerTasks(Tasks):
         """
         apply migrations
         """
-        with self.service.lock:
-            self.service.migrate(tag=tag, registry=self.registry)
+        try:
+            with self.service.lock:
+                self.service.migrate(tag=tag, registry=self.registry)
+        except self.service.Locked:
+            pass
 
     @fab.task
     @skip_unknown_host
@@ -198,8 +199,35 @@ class _DockerTasks(Tasks):
         """
         remove previously applied migrations if any
         """
-        with self.service.lock:
-            self.service.migrate_back()
+        try:
+            with self.service.lock:
+                self.service.migrate_back()
+        except self.service.Locked:
+            pass
+
+    @fab.task
+    @skip_unknown_host
+    def backup(self):
+        """
+        backup data
+        """
+        try:
+            with self.service.lock:
+                self.service.backup()
+        except self.service.Locked:
+            pass
+
+    @fab.task
+    @skip_unknown_host
+    def restore(self, backup_filename=None):
+        """
+        restore data
+        """
+        try:
+            with self.service.lock:
+                self.service.restore(backup_name=backup_filename)
+        except self.service.Locked:
+            pass
 
     @fab.task(task_class=IgnoreHostsTask)
     def rollback(self, migrate_back=True):
@@ -209,28 +237,6 @@ class _DockerTasks(Tasks):
         if strtobool(migrate_back):
             fab.execute(self.migrate_back)
         fab.execute(self.revert)
-
-    @fab.task
-    @skip_unknown_host
-    def backup(self):
-        """
-        backup data
-        """
-        with self.service.lock:
-            if fab.env.infrastructure not in self._backup_done:
-                self._backup_done.add(fab.env.infrastructure)
-                self.service.backup()
-
-    @fab.task
-    @skip_unknown_host
-    def restore(self, backup_filename=None):
-        """
-        restore data
-        """
-        with self.service.lock:
-            if fab.env.infrastructure not in self._restore_done:
-                self._restore_done.add(fab.env.infrastructure)
-                self.service.restore(backup_name=backup_filename)
 
     @fab.task
     @skip_unknown_host
@@ -427,8 +433,6 @@ class DockerTasks(Tasks):
         self.revert.use_task_objects = False  # disabled in favour of rollback
         self.prepare.use_task_objects = registry is not None
         self.push.use_task_objects = registry is not None
-        self._backup_done = set()
-        self._restore_done = set()
 
     @property
     def image(self):
@@ -448,8 +452,11 @@ class DockerTasks(Tasks):
         """
         apply migrations
         """
-        with self.service.lock:
-            self.service.migrate(tag=tag, registry=self.host_registry)
+        try:
+            with self.service.lock:
+                self.service.migrate(tag=tag, registry=self.host_registry)
+        except self.service.Locked:
+            pass
 
     @fab.task
     @skip_unknown_host
@@ -457,8 +464,35 @@ class DockerTasks(Tasks):
         """
         remove previously applied migrations if any
         """
-        with self.service.lock:
-            self.service.migrate_back()
+        try:
+            with self.service.lock:
+                self.service.migrate_back()
+        except self.service.Locked:
+            pass
+
+    @fab.task
+    @skip_unknown_host
+    def backup(self):
+        """
+        backup data
+        """
+        try:
+            with self.service.lock:
+                self.service.backup()
+        except self.service.Locked:
+            pass
+
+    @fab.task
+    @skip_unknown_host
+    def restore(self, backup_filename=None):
+        """
+        restore data
+        """
+        try:
+            with self.service.lock:
+                self.service.restore(backup_name=backup_filename)
+        except self.service.Locked:
+            pass
 
     @fab.task(task_class=IgnoreHostsTask)
     def rollback(self, migrate_back=True):
@@ -468,28 +502,6 @@ class DockerTasks(Tasks):
         if strtobool(migrate_back):
             fab.execute(self.migrate_back)
         fab.execute(self.revert)
-
-    @fab.task
-    @skip_unknown_host
-    def backup(self):
-        """
-        backup data
-        """
-        with self.service.lock:
-            if fab.env.infrastructure not in self._backup_done:
-                self._backup_done.add(fab.env.infrastructure)
-                self.service.backup()
-
-    @fab.task
-    @skip_unknown_host
-    def restore(self, backup_filename=None):
-        """
-        restore data
-        """
-        with self.service.lock:
-            if fab.env.infrastructure not in self._restore_done:
-                self._restore_done.add(fab.env.infrastructure)
-                self.service.restore(backup_name=backup_filename)
 
     @fab.task(task_class=IgnoreHostsTask)
     def prepare(self, tag=None):

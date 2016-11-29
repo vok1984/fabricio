@@ -1,5 +1,3 @@
-import contextlib
-import dummy_threading
 import functools
 import json
 import re
@@ -103,9 +101,6 @@ class Mount(RemovableOption):
 class Service(BaseService):
 
     sentinel = None
-
-    # allow all tasks to be executed in parallel
-    lock = dummy_threading.RLock()
 
     @property
     def image(self):
@@ -288,39 +283,22 @@ class Service(BaseService):
                 output=sys.stderr,
             )
 
-    @contextlib.contextmanager
     def _non_blocking_lock(self):
-        lock = super(Service, self).lock
-        locked = lock.acquire(False)
-        try:
-            yield locked
-        finally:
-            if locked:
-                lock.release()
+        if not self.is_leader():
+            raise self.Locked
+        return super(Service, self)._non_blocking_lock()
 
     def migrate(self, tag=None, registry=None):
-        if self.is_leader():
-            with self._non_blocking_lock() as locked:
-                if locked:
-                    self.sentinel.migrate(tag=tag, registry=registry)
+        self.sentinel.migrate(tag=tag, registry=registry)
 
     def migrate_back(self):
-        if self.is_leader():
-            with self._non_blocking_lock() as locked:
-                if locked:
-                    self.sentinel.migrate_back()
+        self.sentinel.migrate_back()
 
     def backup(self):
-        if self.is_leader():
-            with self._non_blocking_lock() as locked:
-                if locked:
-                    self.sentinel.backup()
+        self.sentinel.backup()
 
     def restore(self, backup_name=None):
-        if self.is_leader():
-            with self._non_blocking_lock() as locked:
-                if locked:
-                    self.sentinel.restore(backup_name=backup_name)
+        self.sentinel.restore(backup_name=backup_name)
 
     @utils.default_property
     def info(self):
