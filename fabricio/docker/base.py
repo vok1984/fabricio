@@ -10,6 +10,10 @@ from fabricio.utils import default_property
 _lock = multiprocessing.RLock()
 
 
+class LockImpossible(Exception):
+    pass
+
+
 class Option(default_property):
 
     def __init__(self, func=None, default=None, name=None):
@@ -108,7 +112,7 @@ class BaseService(object):
     def _non_blocking_lock(self):
         if fab.env.parallel:
             if not _lock.acquire(False):
-                raise self.Locked
+                raise LockImpossible
             try:
                 yield
             finally:
@@ -116,7 +120,7 @@ class BaseService(object):
         else:
             try:
                 if self._locks > 0:
-                    raise self.Locked
+                    raise LockImpossible
                 yield
             finally:
                 self._locks += 1
@@ -125,9 +129,6 @@ class BaseService(object):
                     self._locks = 0
 
     lock = property(contextlib.contextmanager(_non_blocking_lock))
-
-    class Locked(Exception):
-        pass
 
     def __str__(self):
         if not self.name:

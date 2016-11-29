@@ -14,7 +14,7 @@ import fabricio
 
 from fabricio import utils
 
-from .base import BaseService, Option, Attribute
+from .base import BaseService, Option, Attribute, LockImpossible
 from .container import Container
 
 
@@ -285,7 +285,7 @@ class Service(BaseService):
 
     def _non_blocking_lock(self):
         if not self.is_leader():
-            raise self.Locked
+            raise LockImpossible
         return super(Service, self)._non_blocking_lock()
 
     def migrate(self, tag=None, registry=None):
