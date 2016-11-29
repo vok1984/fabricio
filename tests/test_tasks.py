@@ -188,11 +188,18 @@ class DockerTasksTestCase(unittest.TestCase):
 
     @mock.patch.multiple(TestContainer, revert=mock.DEFAULT, migrate_back=mock.DEFAULT)
     def test_rollback(self, revert, migrate_back):
+        migrate_back.__hash__ = object.__hash__
         tasks_list = tasks.DockerTasks(service=TestContainer(), hosts=['host'])
         rollback = mock.Mock()
         rollback.attach_mock(migrate_back, 'migrate_back')
         rollback.attach_mock(revert, 'revert')
         revert.return_value = True
+
+        # with migrate_back disabled
+        fab.execute(tasks_list.rollback, migrate_back='no')
+        migrate_back.assert_not_called()
+        revert.assert_called_once()
+        rollback.reset_mock()
 
         # default case
         fab.execute(tasks_list.rollback)
@@ -200,12 +207,6 @@ class DockerTasksTestCase(unittest.TestCase):
             [mock.call.migrate_back(), mock.call.revert()],
             rollback.mock_calls,
         )
-        rollback.reset_mock()
-
-        # with migrate_back disabled
-        fab.execute(tasks_list.rollback, migrate_back='no')
-        migrate_back.assert_not_called()
-        revert.assert_called_once()
         rollback.reset_mock()
 
     def test_pull_raises_error_if_no_ssh_tunnel_credentials_can_be_obtained(self):
