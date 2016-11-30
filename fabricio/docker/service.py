@@ -1,3 +1,4 @@
+import collections
 import functools
 import json
 import re
@@ -283,10 +284,14 @@ class Service(BaseService):
                 output=sys.stderr,
             )
 
-    def lock(self):
+    def _lock_context(self):
+        # TODO use is_manager and event.is_set() and condition?
+        context = super(Service, self)._lock_context()
+        yield next(context)
         if not self.is_leader():
-            raise LockImpossible
-        return super(Service, self).lock()
+            # TODO fix processing following exception in super()._lock_context
+            context.throw(LockImpossible)
+        collections.deque(context, maxlen=0)  # consume context generator
 
     def migrate(self, tag=None, registry=None):
         self.sentinel.migrate(tag=tag, registry=registry)

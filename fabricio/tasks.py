@@ -18,10 +18,6 @@ from fabricio.docker.base import LockImpossible
 from fabricio.utils import patch, strtobool, Options, OrderedDict
 
 
-def once_per_command(task):
-    pass  # TODO
-
-
 def skip_unknown_host(task):
     @functools.wraps(task)
     def _task(*args, **kwargs):
@@ -167,6 +163,7 @@ class _DockerTasks(Tasks):
         self.migrate_back.use_task_objects = migrate_commands
         self.revert.use_task_objects = False  # disabled in favour of rollback
         self._countdown = collections.defaultdict(lambda: len(fab.env.hosts))
+        self._called = False
 
     @property
     def image(self):
@@ -180,31 +177,22 @@ class _DockerTasks(Tasks):
         """
         self.service.revert()
 
-    @contextlib.contextmanager
-    def once_per_command(self, callback):
-        if fab.env.parallel:
-            raise TypeError('Cannot be used in parallel mode')
-        self._countdown[callback] -= 1
-        if self._countdown[callback] > 0:
-            raise LockImpossible
-        # restore countdown after callback has been executed
-        del self._countdown[callback]
-        yield
-
-    def execute_with_lock(self, *args, **kwargs):
+    def once_per_command(self, *args, **kwargs):
+        callback, args = args[0], args[1:]
         try:
-            callback, args = args[0], args[1:]
-        except IndexError:
-            raise ValueError('Must provide callback argument')
-        try:
-            if fab.env.parallel:
-                lock = self.service.lock()
-            else:
-                lock = self.once_per_command(callback)
-            with lock:
-                return callback(*args, **kwargs)
+            with self.service.lock:
+                if not fab.env.parallel and self._called:
+                    return
+                self._called = True
+                callback(*args, **kwargs)
         except LockImpossible:
             pass
+        finally:
+            self._countdown[callback] -= 1
+            if self._countdown[callback] < 1:  # TODO == 0
+                # restore countdown after it has been exhausted
+                del self._countdown[callback]
+                self._called = False
 
     @fab.task
     @skip_unknown_host
@@ -212,7 +200,7 @@ class _DockerTasks(Tasks):
         """
         apply migrations
         """
-        self.execute_with_lock(
+        self.once_per_command(
             self.service.migrate,
             tag=tag,
             registry=self.registry,
@@ -224,7 +212,7 @@ class _DockerTasks(Tasks):
         """
         remove previously applied migrations if any
         """
-        self.execute_with_lock(self.service.migrate_back)
+        self.once_per_command(self.service.migrate_back)
 
     @fab.task
     @skip_unknown_host
@@ -232,7 +220,7 @@ class _DockerTasks(Tasks):
         """
         backup data
         """
-        self.execute_with_lock(self.service.backup)
+        self.once_per_command(self.service.backup)
 
     @fab.task
     @skip_unknown_host
@@ -240,7 +228,7 @@ class _DockerTasks(Tasks):
         """
         restore data
         """
-        self.execute_with_lock(
+        self.once_per_command(
             self.service.restore,
             backup_name=backup_filename,
         )
@@ -450,6 +438,7 @@ class DockerTasks(Tasks):
         self.prepare.use_task_objects = registry is not None
         self.push.use_task_objects = registry is not None
         self._countdown = collections.defaultdict(lambda: len(fab.env.hosts))
+        self._called = False
 
     @property
     def image(self):
@@ -463,31 +452,22 @@ class DockerTasks(Tasks):
         """
         self.service.revert()
 
-    @contextlib.contextmanager
-    def once_per_command(self, callback):
-        if fab.env.parallel:
-            raise TypeError('Cannot be used in parallel mode')
-        self._countdown[callback] -= 1
-        if self._countdown[callback] > 0:
-            raise LockImpossible
-        # restore countdown after callback has been executed
-        del self._countdown[callback]
-        yield
-
-    def execute_with_lock(self, *args, **kwargs):
+    def once_per_command(self, *args, **kwargs):
+        callback, args = args[0], args[1:]
         try:
-            callback, args = args[0], args[1:]
-        except IndexError:
-            raise ValueError('Must provide callback argument')
-        try:
-            if fab.env.parallel:
-                lock = self.service.lock()
-            else:
-                lock = self.once_per_command(callback)
-            with lock:
-                return callback(*args, **kwargs)
+            with self.service.lock:
+                if not fab.env.parallel and self._called:
+                    return
+                self._called = True
+                callback(*args, **kwargs)
         except LockImpossible:
             pass
+        finally:
+            self._countdown[callback] -= 1
+            if self._countdown[callback] < 1:  # TODO == 0
+                # restore countdown after it has been exhausted
+                del self._countdown[callback]
+                self._called = False
 
     @fab.task
     @skip_unknown_host
@@ -495,7 +475,7 @@ class DockerTasks(Tasks):
         """
         apply migrations
         """
-        self.execute_with_lock(
+        self.once_per_command(
             self.service.migrate,
             tag=tag,
             registry=self.host_registry,
@@ -507,7 +487,7 @@ class DockerTasks(Tasks):
         """
         remove previously applied migrations if any
         """
-        self.execute_with_lock(self.service.migrate_back)
+        self.once_per_command(self.service.migrate_back)
 
     @fab.task
     @skip_unknown_host
@@ -515,7 +495,7 @@ class DockerTasks(Tasks):
         """
         backup data
         """
-        self.execute_with_lock(self.service.backup)
+        self.once_per_command(self.service.backup)
 
     @fab.task
     @skip_unknown_host
@@ -523,7 +503,7 @@ class DockerTasks(Tasks):
         """
         restore data
         """
-        self.execute_with_lock(
+        self.once_per_command(
             self.service.restore,
             backup_name=backup_filename,
         )

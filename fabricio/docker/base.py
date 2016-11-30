@@ -1,12 +1,12 @@
 import contextlib
+import ctypes
 import multiprocessing
 
 from cached_property import cached_property
+from fabric import api as fab
 from frozendict import frozendict
 
 from fabricio.utils import default_property
-
-_lock = multiprocessing.RLock()
 
 
 class LockImpossible(Exception):
@@ -48,6 +48,9 @@ class BaseService(object):
                         'Unknown attribute: {attr}'.format(attr=attr)
                     )
                 setattr(self, attr, value)
+        self._lock = multiprocessing.RLock()
+        self._called = multiprocessing.Event()
+        self._countdown = multiprocessing.Value(ctypes.c_int, 0)
 
     def __setattr__(self, attr, value):
         if attr in self._main_options:
@@ -107,14 +110,26 @@ class BaseService(object):
 
         return self.__class__(options=fork_options, **attrs)
 
-    @contextlib.contextmanager
-    def lock(self):
-        if not _lock.acquire(False):
-            raise LockImpossible
+    def _lock_context(self):
+        locked = self._lock.acquire(False)
         try:
+            if not locked:
+                raise LockImpossible
+            if self._called.is_set():
+                raise LockImpossible
+            self._called.set()
             yield
         finally:
-            _lock.release()
+            if locked:
+                self._lock.release()
+            self._countdown.value += 1
+            if self._countdown.value >= len(fab.env.hosts):
+                self._countdown.value = 0
+                self._called.clear()
+
+    @property
+    def lock(self):
+        return contextlib.contextmanager(self._lock_context)()
 
     def __str__(self):
         if not self.name:
