@@ -163,7 +163,7 @@ class _DockerTasks(Tasks):
         self.migrate.use_task_objects = migrate_commands
         self.migrate_back.use_task_objects = migrate_commands
         self.revert.use_task_objects = False  # disabled in favour of rollback
-        self._invoke_counter = multiprocessing.Value(ctypes.c_int, 0)
+        self._invoke_attempts_counter = multiprocessing.Value(ctypes.c_int, 0)
         self._invoked = multiprocessing.Event()
 
     @property
@@ -192,10 +192,10 @@ class _DockerTasks(Tasks):
         except LockImpossible:
             pass
         finally:
-            self._invoke_counter.value += 1
-            if self._invoke_counter.value >= len(fab.env.hosts):  # TODO ==
-                # reset invoke counter upon reaching number of hosts
-                self._invoke_counter.value = 0
+            self._invoke_attempts_counter.value += 1
+            if self._invoke_attempts_counter.value >= len(fab.env.hosts):  # TODO ==
+                # reset invoke attempts counter upon reaching number of hosts
+                self._invoke_attempts_counter.value = 0
                 is_error = not self._invoked.is_set()
                 self._invoked.clear()
                 if is_error:
@@ -448,7 +448,7 @@ class DockerTasks(Tasks):
         self.revert.use_task_objects = False  # disabled in favour of rollback
         self.prepare.use_task_objects = registry is not None
         self.push.use_task_objects = registry is not None
-        self._invoke_counter = multiprocessing.Value(ctypes.c_int, 0)
+        self._invoke_attempts_counter = multiprocessing.Value(ctypes.c_int, 0)
         self._invoked = multiprocessing.Event()
 
     @property
@@ -477,10 +477,10 @@ class DockerTasks(Tasks):
         except LockImpossible:
             pass
         finally:
-            self._invoke_counter.value += 1
-            if self._invoke_counter.value >= len(fab.env.hosts):  # TODO ==
-                # reset invoke counter upon reaching number of hosts
-                self._invoke_counter.value = 0
+            self._invoke_attempts_counter.value += 1
+            if self._invoke_attempts_counter.value >= len(fab.env.hosts):  # TODO ==
+                # reset invoke attempts counter upon reaching number of hosts
+                self._invoke_attempts_counter.value = 0
                 is_error = not self._invoked.is_set()
                 self._invoked.clear()
                 if is_error:
