@@ -184,7 +184,7 @@ class _DockerTasks(Tasks):
         except IndexError:
             raise ValueError('callback must be provided')
         try:
-            with self.service.lock():
+            with self.service.invocation_lock():
                 if self._invoked.is_set():
                     return
                 callback(*args, **kwargs)
@@ -470,7 +470,7 @@ class DockerTasks(Tasks):
         except IndexError:
             raise ValueError('callback must be provided')
         try:
-            with self.service.lock():
+            with self.service.invocation_lock():
                 if self._invoked.is_set():
                     return
                 callback(*args, **kwargs)

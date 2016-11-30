@@ -83,15 +83,6 @@ class BaseService(object):
 
     options = property(_get_options)
 
-    @contextlib.contextmanager
-    def lock(self, lock=multiprocessing.Lock()):
-        if not lock.acquire(False):
-            raise LockImpossible
-        try:
-            yield lock
-        finally:
-            lock.release()
-
     def fork(self, options=None, **attrs):
         fork_options = dict(
             (
@@ -121,6 +112,15 @@ class BaseService(object):
 
     def __copy__(self):
         return self.fork()
+
+    @contextlib.contextmanager
+    def invocation_lock(self, lock=multiprocessing.Lock()):
+        if not lock.acquire(False):
+            raise LockImpossible
+        try:
+            yield lock
+        finally:
+            lock.release()
 
     def update(self, tag=None, registry=None, force=False):
         raise NotImplementedError

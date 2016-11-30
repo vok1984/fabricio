@@ -1,6 +1,7 @@
-import collections
+import contextlib
 import functools
 import json
+import multiprocessing
 import re
 import sys
 
@@ -227,6 +228,25 @@ class Service(BaseService):
             args=self.args or '',
         ))
 
+    @contextlib.contextmanager
+    def invocation_lock(self, lock=multiprocessing.Lock()):
+        if not self.is_manager():
+            raise LockImpossible
+        lock.acquire()
+        try:
+            yield lock
+        except RuntimeError as error:
+            fabricio.log(
+                "WARNING: {host} could not invoke command: {error}".format(
+                    host=fab.env.host,
+                    error=error,
+                ),
+                color=colors.red,
+                output=sys.stderr,
+            )
+        finally:
+            lock.release()
+
     def update(self, tag=None, registry=None, force=False):
         if not self.is_manager():
             return False
@@ -283,15 +303,6 @@ class Service(BaseService):
                 color=colors.red,
                 output=sys.stderr,
             )
-
-    def _lock_context(self):
-        # TODO use is_manager and event.is_set() and condition?
-        context = super(Service, self)._lock_context()
-        yield next(context)
-        if not self.is_leader():
-            # TODO fix processing following exception in super()._lock_context
-            context.throw(LockImpossible)
-        collections.deque(context, maxlen=0)  # consume context generator
 
     def migrate(self, tag=None, registry=None):
         self.sentinel.migrate(tag=tag, registry=registry)
