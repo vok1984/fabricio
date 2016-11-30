@@ -192,18 +192,19 @@ class _DockerTasks(Tasks):
         except LockImpossible:
             pass
         finally:
-            self._invoke_attempts_counter.value += 1
-            if self._invoke_attempts_counter.value >= len(fab.env.hosts):  # TODO ==
-                # reset invoke attempts counter upon reaching number of hosts
-                self._invoke_attempts_counter.value = 0
-                is_error = not self._invoked.is_set()
-                self._invoked.clear()
-                if is_error:
-                    message = '{service}.{method} was not invoked'.format(
-                        service=self.service,
-                        method=callback.__name__,
-                    )
-                    raise RuntimeError(message)
+            with self._invoke_attempts_counter.get_lock():
+                self._invoke_attempts_counter.value += 1
+                if self._invoke_attempts_counter.value >= len(fab.env.hosts):  # TODO ==
+                    # reset counter upon reaching number of hosts
+                    self._invoke_attempts_counter.value = 0
+                    is_error = not self._invoked.is_set()
+                    self._invoked.clear()
+                    if is_error:
+                        message = '{service}.{method} was not invoked'.format(
+                            service=self.service,
+                            method=callback.__name__,
+                        )
+                        raise RuntimeError(message)
 
     @fab.task
     @skip_unknown_host
@@ -477,18 +478,19 @@ class DockerTasks(Tasks):
         except LockImpossible:
             pass
         finally:
-            self._invoke_attempts_counter.value += 1
-            if self._invoke_attempts_counter.value >= len(fab.env.hosts):  # TODO ==
-                # reset invoke attempts counter upon reaching number of hosts
-                self._invoke_attempts_counter.value = 0
-                is_error = not self._invoked.is_set()
-                self._invoked.clear()
-                if is_error:
-                    message = '{service}.{method} was not invoked'.format(
-                        service=self.service,
-                        method=callback.__name__,
-                    )
-                    raise RuntimeError(message)
+            with self._invoke_attempts_counter.get_lock():
+                self._invoke_attempts_counter.value += 1
+                if self._invoke_attempts_counter.value >= len(fab.env.hosts):  # TODO ==
+                    # reset counter upon reaching number of hosts
+                    self._invoke_attempts_counter.value = 0
+                    is_error = not self._invoked.is_set()
+                    self._invoked.clear()
+                    if is_error:
+                        message = '{service}.{method} was not invoked'.format(
+                            service=self.service,
+                            method=callback.__name__,
+                        )
+                        raise RuntimeError(message)
 
     @fab.task
     @skip_unknown_host
