@@ -1,6 +1,8 @@
 import collections
 import contextlib
+import ctypes
 import functools
+import multiprocessing
 import os
 import sys
 import types
@@ -162,8 +164,10 @@ class _DockerTasks(Tasks):
         self.migrate.use_task_objects = migrate_commands
         self.migrate_back.use_task_objects = migrate_commands
         self.revert.use_task_objects = False  # disabled in favour of rollback
-        self._countdown = collections.defaultdict(lambda: len(fab.env.hosts))
-        self._called = False
+        self._countdown = collections.defaultdict(
+            lambda: multiprocessing.Value(ctypes.c_int, len(fab.env.hosts))
+        )
+        self._invoked = multiprocessing.Event()
 
     @property
     def image(self):
@@ -178,21 +182,31 @@ class _DockerTasks(Tasks):
         self.service.revert()
 
     def once_per_command(self, *args, **kwargs):
-        callback, args = args[0], args[1:]
         try:
-            with self.service.lock:
-                if not fab.env.parallel and self._called:
+            callback, args = args[0], args[1:]
+        except IndexError:
+            raise ValueError('callback must be provided')
+        try:
+            with self.service.lock():
+                if self._invoked.is_set():
                     return
-                self._called = True
+                self._invoked.set()
                 callback(*args, **kwargs)
         except LockImpossible:
             pass
         finally:
-            self._countdown[callback] -= 1
-            if self._countdown[callback] < 1:  # TODO == 0
+            self._countdown[callback].value -= 1
+            if self._countdown[callback].value < 1:  # TODO == 0
                 # restore countdown after it has been exhausted
                 del self._countdown[callback]
-                self._called = False
+                is_error = not self._invoked.is_set()
+                self._invoked.clear()
+                if is_error:
+                    message = '{service}.{method} was not invoked'.format(
+                        service=self.service,
+                        method=callback.__name__,
+                    )
+                    raise RuntimeError(message)
 
     @fab.task
     @skip_unknown_host
@@ -437,8 +451,10 @@ class DockerTasks(Tasks):
         self.revert.use_task_objects = False  # disabled in favour of rollback
         self.prepare.use_task_objects = registry is not None
         self.push.use_task_objects = registry is not None
-        self._countdown = collections.defaultdict(lambda: len(fab.env.hosts))
-        self._called = False
+        self._countdown = collections.defaultdict(
+            lambda: multiprocessing.Value(ctypes.c_int, len(fab.env.hosts))
+        )
+        self._invoked = multiprocessing.Event()
 
     @property
     def image(self):
@@ -453,21 +469,31 @@ class DockerTasks(Tasks):
         self.service.revert()
 
     def once_per_command(self, *args, **kwargs):
-        callback, args = args[0], args[1:]
         try:
-            with self.service.lock:
-                if not fab.env.parallel and self._called:
+            callback, args = args[0], args[1:]
+        except IndexError:
+            raise ValueError('callback must be provided')
+        try:
+            with self.service.lock():
+                if self._invoked.is_set():
                     return
-                self._called = True
+                self._invoked.set()
                 callback(*args, **kwargs)
         except LockImpossible:
             pass
         finally:
-            self._countdown[callback] -= 1
-            if self._countdown[callback] < 1:  # TODO == 0
+            self._countdown[callback].value -= 1
+            if self._countdown[callback].value < 1:  # TODO == 0
                 # restore countdown after it has been exhausted
                 del self._countdown[callback]
-                self._called = False
+                is_error = not self._invoked.is_set()
+                self._invoked.clear()
+                if is_error:
+                    message = '{service}.{method} was not invoked'.format(
+                        service=self.service,
+                        method=callback.__name__,
+                    )
+                    raise RuntimeError(message)
 
     @fab.task
     @skip_unknown_host
