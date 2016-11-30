@@ -187,8 +187,8 @@ class _DockerTasks(Tasks):
             with self.service.lock():
                 if self._invoked.is_set():
                     return
-                self._invoked.set()
                 callback(*args, **kwargs)
+                self._invoked.set()
         except LockImpossible:
             pass
         finally:
@@ -473,8 +473,8 @@ class DockerTasks(Tasks):
             with self.service.lock():
                 if self._invoked.is_set():
                     return
-                self._invoked.set()
                 callback(*args, **kwargs)
+                self._invoked.set()
         except LockImpossible:
             pass
         finally:
