@@ -11,6 +11,7 @@ from fabric.main import load_tasks_from_module, is_task_module, is_task_object
 import fabricio
 
 from fabricio import docker, tasks
+from fabricio import utils
 
 
 class TestContainer(docker.Container):
@@ -188,7 +189,6 @@ class DockerTasksTestCase(unittest.TestCase):
 
     @mock.patch.multiple(TestContainer, revert=mock.DEFAULT, migrate_back=mock.DEFAULT)
     def test_rollback(self, revert, migrate_back):
-        migrate_back.__hash__ = object.__hash__
         tasks_list = tasks.DockerTasks(service=TestContainer(), hosts=['host'])
         rollback = mock.Mock()
         rollback.attach_mock(migrate_back, 'migrate_back')
@@ -457,7 +457,6 @@ class DockerTasksTestCase(unittest.TestCase):
             ),
         )
         deploy = mock.Mock()
-        migrate.__hash__ = backup.__hash__ = object.__hash__
         deploy.attach_mock(backup, 'backup')
         deploy.attach_mock(migrate, 'migrate')
         deploy.attach_mock(update, 'update')
@@ -497,6 +496,76 @@ class DockerTasksTestCase(unittest.TestCase):
                         tasks_list = tasks.DockerTasks(service=docker.Container(name='name'))
                         tasks_list.delete_dangling_images()
                         local.assert_called_once_with(data['expected_command'])
+
+    @mock.patch.object(docker.Service, 'is_manager', return_value=True)
+    @mock.patch.multiple(
+        docker.Container,
+        backup=mock.DEFAULT,
+        restore=mock.DEFAULT,
+        migrate=mock.DEFAULT,
+        migrate_back=mock.DEFAULT,
+    )
+    def test_once_per_command(self, is_manager, backup, restore, migrate, migrate_back):
+        commands = mock.Mock()
+        commands.attach_mock(backup, 'backup')
+        commands.attach_mock(restore, 'restore')
+        commands.attach_mock(migrate, 'migrate')
+        commands.attach_mock(migrate_back, 'migrate_back')
+        container = docker.Container()
+        swarm = docker.Service()
+        cases = dict(
+            container_single_host_serial=dict(
+                tasks_init_kwargs=dict(
+                    service=container,
+                    hosts=['host'],
+                ),
+                command='migrate',
+                expected_calls=[
+                    mock.call.migrate(tag=None, registry=None),
+                ],
+            ),
+            container_multiple_hosts_serial=dict(
+                tasks_init_kwargs=dict(
+                    service=container,
+                    hosts=['host1', 'host2'],
+                ),
+                command='migrate',
+                expected_calls=[
+                    mock.call.migrate(tag=None, registry=None),
+                ],
+            ),
+            service_single_host_serial=dict(
+                tasks_init_kwargs=dict(
+                    service=swarm,
+                    hosts=['host'],
+                ),
+                command='migrate',
+                expected_calls=[
+                    mock.call.migrate(tag=None, registry=None),
+                ],
+            ),
+            service_multiple_hosts_serial=dict(
+                tasks_init_kwargs=dict(
+                    service=swarm,
+                    hosts=['host1', 'hosts2'],
+                ),
+                command='migrate',
+                expected_calls=[
+                    mock.call.migrate(tag=None, registry=None),
+                ],
+            ),
+        )
+        for case, data in cases.items():
+            with self.subTest(case=case):
+                commands.reset_mock()
+                app = tasks.DockerTasks(**data['tasks_init_kwargs'])
+                command = getattr(app, data['command'])
+                with utils.patch(fab.env, 'hosts', command.hosts):
+                    fab.execute(command)
+                    self.assertListEqual(
+                        data['expected_calls'],
+                        commands.mock_calls,
+                    )
 
 
 class PullDockerTasksTestCase(unittest.TestCase):
@@ -666,7 +735,6 @@ class PullDockerTasksTestCase(unittest.TestCase):
             ),
         )
         deploy = mock.Mock()
-        migrate.__hash__ = backup.__hash__ = object.__hash__
         deploy.attach_mock(backup, 'backup')
         deploy.attach_mock(migrate, 'migrate')
         deploy.attach_mock(update, 'update')
@@ -883,7 +951,6 @@ class BuildDockerTasksTestCase(unittest.TestCase):
             ),
         )
         deploy = mock.Mock()
-        migrate.__hash__ = backup.__hash__ = object.__hash__
         deploy.attach_mock(backup, 'backup')
         deploy.attach_mock(migrate, 'migrate')
         deploy.attach_mock(update, 'update')
@@ -1158,7 +1225,6 @@ class ImageBuildDockerTasksTestCase(unittest.TestCase):
             ),
         )
         deploy = mock.Mock()
-        migrate.__hash__ = backup.__hash__ = object.__hash__
         deploy.attach_mock(backup, 'backup')
         deploy.attach_mock(migrate, 'migrate')
         deploy.attach_mock(update, 'update')
