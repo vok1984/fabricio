@@ -1,6 +1,8 @@
+import ctypes
 import sys
 
 import mock
+import multiprocessing
 import six
 import unittest2 as unittest
 
@@ -498,74 +500,78 @@ class DockerTasksTestCase(unittest.TestCase):
                         local.assert_called_once_with(data['expected_command'])
 
     @mock.patch.object(docker.Service, 'is_manager', return_value=True)
-    @mock.patch.multiple(
-        docker.Container,
-        backup=mock.DEFAULT,
-        restore=mock.DEFAULT,
-        migrate=mock.DEFAULT,
-        migrate_back=mock.DEFAULT,
-    )
-    def test_once_per_command(self, is_manager, backup, restore, migrate, migrate_back):
-        commands = mock.Mock()
-        commands.attach_mock(backup, 'backup')
-        commands.attach_mock(restore, 'restore')
-        commands.attach_mock(migrate, 'migrate')
-        commands.attach_mock(migrate_back, 'migrate_back')
+    def test_once_per_command(self, is_manager):
         container = docker.Container()
         swarm = docker.Service()
         cases = dict(
             container_single_host_serial=dict(
                 tasks_init_kwargs=dict(
                     service=container,
-                    hosts=['host'],
                 ),
-                command='migrate',
-                expected_calls=[
-                    mock.call.migrate(tag=None, registry=None),
-                ],
+                hosts=['host'],
+                parallel=False,
             ),
             container_multiple_hosts_serial=dict(
                 tasks_init_kwargs=dict(
                     service=container,
-                    hosts=['host1', 'host2'],
                 ),
-                command='migrate',
-                expected_calls=[
-                    mock.call.migrate(tag=None, registry=None),
-                ],
+                hosts=['host1', 'host2'],
+                parallel=False,
             ),
             service_single_host_serial=dict(
                 tasks_init_kwargs=dict(
                     service=swarm,
-                    hosts=['host'],
                 ),
-                command='migrate',
-                expected_calls=[
-                    mock.call.migrate(tag=None, registry=None),
-                ],
+                hosts=['host'],
+                parallel=False,
             ),
             service_multiple_hosts_serial=dict(
                 tasks_init_kwargs=dict(
                     service=swarm,
-                    hosts=['host1', 'hosts2'],
                 ),
-                command='migrate',
-                expected_calls=[
-                    mock.call.migrate(tag=None, registry=None),
-                ],
+                hosts=['host1', 'hosts2'],
+                parallel=False,
+            ),
+            container_single_host_parallel=dict(
+                tasks_init_kwargs=dict(
+                    service=container,
+                ),
+                hosts=['host'],
+                parallel=True,
+            ),
+            container_multiple_hosts_parallel=dict(
+                tasks_init_kwargs=dict(
+                    service=container,
+                ),
+                hosts=['host1', 'host2'],
+                parallel=True,
+            ),
+            service_single_host_parallel=dict(
+                tasks_init_kwargs=dict(
+                    service=swarm,
+                ),
+                hosts=['host'],
+                parallel=True,
+            ),
+            service_multiple_hosts_parallel=dict(
+                tasks_init_kwargs=dict(
+                    service=swarm,
+                ),
+                hosts=['host1', 'hosts2'],
+                parallel=True,
             ),
         )
         for case, data in cases.items():
             with self.subTest(case=case):
-                commands.reset_mock()
+                value = multiprocessing.Value(ctypes.c_int, 0)
                 app = tasks.DockerTasks(**data['tasks_init_kwargs'])
-                command = getattr(app, data['command'])
-                with utils.patch(fab.env, 'hosts', command.hosts):
-                    fab.execute(command)
-                    self.assertListEqual(
-                        data['expected_calls'],
-                        commands.mock_calls,
-                    )
+
+                def command():
+                    with value.get_lock():
+                        value.value += 1
+                with fab.settings(parallel=data['parallel'], hosts=data['hosts']):
+                    fab.execute(app.once_per_command, command)
+                    self.assertEqual(value.value, 1)
 
 
 class PullDockerTasksTestCase(unittest.TestCase):
