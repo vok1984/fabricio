@@ -501,8 +501,8 @@ class DockerTasksTestCase(unittest.TestCase):
 
     @mock.patch.object(docker.Service, 'is_manager', return_value=True)
     def test_once_per_command(self, is_manager):
-        container = docker.Container()
-        swarm = docker.Service()
+        container = docker.Container(name='container')
+        swarm = docker.Service(name='swarm')
         cases = dict(
             container_single_host_serial=dict(
                 tasks_init_kwargs=dict(
@@ -510,6 +510,7 @@ class DockerTasksTestCase(unittest.TestCase):
                 ),
                 hosts=['host'],
                 parallel=False,
+                result=[None],
             ),
             container_multiple_hosts_serial=dict(
                 tasks_init_kwargs=dict(
@@ -517,6 +518,7 @@ class DockerTasksTestCase(unittest.TestCase):
                 ),
                 hosts=['host1', 'host2'],
                 parallel=False,
+                result=[None],
             ),
             service_single_host_serial=dict(
                 tasks_init_kwargs=dict(
@@ -524,6 +526,7 @@ class DockerTasksTestCase(unittest.TestCase):
                 ),
                 hosts=['host'],
                 parallel=False,
+                result=[None],
             ),
             service_multiple_hosts_serial=dict(
                 tasks_init_kwargs=dict(
@@ -531,6 +534,7 @@ class DockerTasksTestCase(unittest.TestCase):
                 ),
                 hosts=['host1', 'hosts2'],
                 parallel=False,
+                result=[None],
             ),
             container_single_host_parallel=dict(
                 tasks_init_kwargs=dict(
@@ -538,6 +542,7 @@ class DockerTasksTestCase(unittest.TestCase):
                 ),
                 hosts=['host'],
                 parallel=True,
+                result=[None],
             ),
             container_multiple_hosts_parallel=dict(
                 tasks_init_kwargs=dict(
@@ -545,6 +550,7 @@ class DockerTasksTestCase(unittest.TestCase):
                 ),
                 hosts=['host1', 'host2'],
                 parallel=True,
+                result=[None],
             ),
             service_single_host_parallel=dict(
                 tasks_init_kwargs=dict(
@@ -552,6 +558,7 @@ class DockerTasksTestCase(unittest.TestCase):
                 ),
                 hosts=['host'],
                 parallel=True,
+                result=[None],
             ),
             service_multiple_hosts_parallel=dict(
                 tasks_init_kwargs=dict(
@@ -559,14 +566,37 @@ class DockerTasksTestCase(unittest.TestCase):
                 ),
                 hosts=['host1', 'hosts2'],
                 parallel=True,
+                result=[None],
+            ),
+            service_multiple_hosts_parallel_with_single_failure=dict(
+                tasks_init_kwargs=dict(
+                    service=swarm,
+                ),
+                hosts=['host1', 'hosts2', 'host3'],
+                parallel=True,
+                result=[RuntimeError(), None],
+            ),
+            service_multiple_hosts_parallel_with_multiple_failure=dict(
+                tasks_init_kwargs=dict(
+                    service=swarm,
+                ),
+                hosts=['host1', 'hosts2', 'host3'],
+                parallel=True,
+                result=[RuntimeError(), RuntimeError(), None],
             ),
         )
         for case, data in cases.items():
             with self.subTest(case=case):
                 value = multiprocessing.Value(ctypes.c_int, 0)
+                calls = multiprocessing.Value(ctypes.c_int, 0)
                 app = tasks.DockerTasks(**data['tasks_init_kwargs'])
 
                 def command():
+                    with calls.get_lock():
+                        result = data['result'][calls.value]
+                        calls.value += 1
+                    if isinstance(result, Exception):
+                        raise result
                     with value.get_lock():
                         value.value += 1
                 with fab.settings(parallel=data['parallel'], hosts=data['hosts']):
